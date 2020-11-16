@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<meta name="renderer" content="webkit|ie-comp|ie-stand">
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta http-equiv="Expires" content="0">
+		<meta http-equiv="Pragma" content="no-cache">
+		<meta http-equiv="Cache-control" content="no-cache">
+		<meta http-equiv="Cache" content="no-cache">
+
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+
+		<link rel="stylesheet" type="text/css" href="../css/demo.css" />
+		<link href="../fonts/iconfont.css" rel="stylesheet" />
+
+		<link rel="stylesheet" href="http://192.168.199.153/arcgis_js_api/library/3.25/3.25/esri/css/esri.css">
+
+		<script src="../js/jquery.min.js"></script>
+		<script src="https://js.arcgis.com/3.25/init.js"></script>
+		<style>
+			html,
+			body,
+			#map {
+				height: 100%;
+				width: 100%;
+				margin: 0;
+				padding: 0;
+				border: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map"></div>
+		<div class="operatebar commontool">
+			<div class="middlebox">
+				<div class="editbtn" id="addtool">
+					<i class="iconfont icon-bianji"></i>
+					<span>新增</span>
+				</div>
+				<div class="editbtn" id="edittool">
+					<i class="iconfont icon-tuceng"></i>
+					<span>编辑</span>
+				</div>
+				<div class="editbtn" id="deletetool" style="border: none;">
+					<i class="iconfont icon-yuqi"></i>
+					<span>删除</span>
+				</div>
+
+			</div>
+		</div>
+	</body>
+	<script>
+		dojo.require("esri.SpatialReference");
+		setTimeout(()=>{
+			let s = new esri.SpatialReference({wkid : 4326});
+			console.log(s)
+		},100)
+		require(["esri/map",
+			"esri/toolbars/draw",
+			"esri/toolbars/edit",
+			"esri/graphic",
+			"dojo/_base/event",
+			"esri/symbols/SimpleFillSymbol",
+			"dojo/domReady!"
+		], function(Map, Draw, Edit, Graphic, event, SimpleFillSymbol) {
+			
+			let s = new esri.SpatialReference({wkid : 4326});
+			
+			var map = new esri.Map("map", {
+				center: [104, 30],
+				zoom: 8,
+				basemap: "topo"
+			});
+
+			var drawtoolbar = null;
+			var edittoolbar = null;
+			var statusmanage = {
+				add: false,
+				edit: false,
+				delete: false
+			}
+
+			map.on('load', createToolbar)
+			let layer = new esri.layers.FeatureLayer("https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0");
+			map.addLayer(layer);
+			$('#addtool').on('click', function() {
+				statusmanage.add = !statusmanage.add;
+				if(statusmanage.add) {
+					$(this).addClass('active');
+
+					statusmanage.edit = false;
+					edittoolbar.deactivate();
+					$("#edittool").removeClass('active');
+
+					activeDrawTool();
+				} else {
+					$(this).removeClass('active');
+					drawtoolbar.deactivate();
+				}
+			})
+			$('#edittool').on('click', function() {
+				statusmanage.edit = !statusmanage.edit;
+				if(statusmanage.edit) {
+					$(this).addClass('active');
+
+					statusmanage.add = false;
+					drawtoolbar.deactivate();
+					$("#addtool").removeClass('active');
+				} else {
+					edittoolbar.deactivate();
+					statusmanage.edit = false;
+					$("#edittool").removeClass('active');
+				}
+			})
+			$('#deletetool').on('click', function() {
+				statusmanage.delete = !statusmanage.delete;
+				if(statusmanage.delete) {
+					$(this).addClass('active');
+
+				} else {
+					$(this).removeClass('active');
+				}
+			})
+
+			function createToolbar() {
+				drawtoolbar = new Draw(map);
+				edittoolbar = new Edit(map);
+
+				drawtoolbar.on('draw-end', addToMap);
+				map.graphics.on('click', function(evt) {
+					if(statusmanage.edit) {
+						event.stop(evt);
+						activeEditTool(evt.graphic);
+					}
+				})
+				map.on('click', function(evt) {
+					if(statusmanage.edit) {
+						edittoolbar.deactivate();
+						statusmanage.edit = false;
+						$("#edittool").removeClass('active');
+					}
+				})
+
+				edittoolbar.on('deactivate', function(event) {
+					alert('是否保存修改？');
+				})
+			}
+
+			function activeEditTool(graphic) {
+				edittoolbar.activate(Edit.EDIT_VERTICES, graphic);
+			}
+
+			function activeDrawTool() {
+				drawtoolbar.activate(Draw['POLYGON']);
+			}
+
+			function addToMap(evt) {
+				$("#addtool").removeClass('active');
+				statusmanage.add = false;
+				drawtoolbar.deactivate();
+
+				var symbol = new SimpleFillSymbol();
+				var graphic = new Graphic(evt.geometry, symbol);
+				map.graphics.add(graphic);
+			}
+
+			function saveAddFeatures() {
+				firePerimeterFL.applyEdits(null, [targetGraphic], null);
+			}
+
+		});
+	</script>
+
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>larkplayer quick start</title>
+    <style>
+    	#container{
+    		width: 530px;
+    		height: 320px;
+    	}
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script type="text/javascript" src="https://unpkg.com/larkplayer@latest/dist/larkplayer.js"></script>
+    <script src="https://unpkg.com/larkplayer-ui@latest/dist/larkplayer-ui.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/larkplayer-ui@latest/dist/larkplayer-ui.css" />
+    <script type="text/javascript">
+        // js 文件以 umd 的形式包装，以 script 的形式引用时，larkplayer 会直接挂载在 window 上
+        var width = Math.min(document.body.clientWidth, 640);
+        var player = larkplayer('container', {
+//          width: width,
+//          height: width * 9 / 16,
+            controls: true,
+            src: 'http://127.0.0.1:8020/MarketAnalysis/video/video-V2.mp4'
+        });
+
+        // 支持所有的 html5 标准事件以及一些自定义事件
+        player.on('play', function () {
+            console.log('play');
+        });
+        player.on('ended', function () {
+            console.log('播放完成!');
+        });
+    </script>
+</body>
+</html>

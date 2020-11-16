@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style>
+			#open {
+				width: 160px;
+				height: 80px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<button id="open">打开高德</button>
+
+		<a href="datasilkbag://index?user=13408684395">打开第三方APP</a>
+		<script>
+			document.getElementById('open').addEventListener("click", function() {
+				openApp();
+			});
+
+			function openApp() {
+				if(navigator.userAgent.match(/(iPhone|iPod|iPad);?/i)) {
+					var loadDateTime = new Date();
+					window.setTimeout(function() {
+						var timeOutDateTime = new Date();
+						if(timeOutDateTime - loadDateTime < 5000) {
+							window.location = 'http://223.86.3.47:38080/MarketAnalysis/H5D6DD11E_0807144206.apk';
+						} else {
+							window.close();
+						}
+					}, 25);
+					window.location = "datasilkbag://index?user=13408684395";
+				} else if(navigator.userAgent.match(/android/i)) {
+					var loadDateTime = new Date();
+					var state = window.open("datasilkbag://index?user=13408684395", '_blank');
+					window.setTimeout(function() {
+						var timeOutDateTime = new Date();
+						if(timeOutDateTime - loadDateTime < 5000) {
+							window.location = 'http://223.86.3.47:38080/MarketAnalysis/H5D6DD11E_0807144206.apk';
+						} else {
+							window.close();
+						}
+					}, 25);
+				}
+			}
+		</script>
+	</body>
+
+</html>

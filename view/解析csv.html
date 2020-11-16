@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<title>csv</title>
+		<script src="../js/jquery.min.js"></script>
+		<script src="../js/papaparse.min.js"></script>
+		<style>
+			html,
+			body {
+				font-size: 14px;
+				font-family: 'Microsoft Yahei', Tahoma, Verdana, simsun, sans-serif;
+			}
+			
+			table {
+				width: 85%;
+				margin: 30px auto;
+			}
+		</style>
+		<script>
+			function allowDrop(ev) {
+				ev.preventDefault();
+			}
+
+			function drop(ev) {
+				ev.preventDefault();
+				const files = ev.dataTransfer.files
+				if(!files.length) return
+				// 获取列表的第一个文件
+				const file = files[0]
+				// 创建 FileReader 实例来读取文件
+				const fileReader = new FileReader()
+
+				fileReader.readAsDataURL(file)
+				fileReader.onload = (res) => {
+					debugger
+				}
+			}
+		</script>
+	</head>
+
+	<body>
+		<divv ondrop="drop(event)" ondragover="allowDrop(event)">
+			<table id="table" border="1">
+				<caption>CSV转JSON</caption>
+				<thead>
+					<tr>
+						<th>CGI</th>
+						<th>经度</th>
+						<th>纬度</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			</div>
+			<script>
+				Papa.parse('../data/toushu_2.csv', {
+					download: true,
+					complete: function(results) {
+						var data = results.data,
+							html;
+						for(var i = 1, _l = data.length - 1; i < _l; i++) {
+							var item = data[i];
+							html += '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td><td>' + item[2] + '</td></tr>';
+						}
+						$('#table tbody').append(html);
+					}
+				});
+			</script>
+	</body>
+
+</html>

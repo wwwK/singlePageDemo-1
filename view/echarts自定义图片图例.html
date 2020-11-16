@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../js/echarts.min.js"></script>
+		<style>
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+			
+			.echart {
+				width: 400px;
+				height: 200px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="echart" id="chartA"></div>
+	</body>
+	<script>
+		var myChart = echarts.init(document.getElementById('chartA'));
+		var option = {
+			legend: {
+				selectedMode: false,
+				data: [{
+						name: "流量",
+						icon: "image://../img/l1.png",
+					}
+				],
+				textStyle: {
+					color: "#D1D3D8",
+					fontSize: 12,
+				},
+				right: "center",
+				top: 40,
+				itemWidth: 16,
+				itemHeight: 16,
+			},
+			xAxis: {
+				type: 'category',
+				data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+			},
+			yAxis: {
+				type: 'value'
+			},
+			series: [{
+				name: "流量",
+				data: [820, 932, 901, 934, 1290, 1330, 1320],
+				type: 'line'
+			}]
+		};
+
+		myChart.setOption(option);
+	</script>
+
+</html>

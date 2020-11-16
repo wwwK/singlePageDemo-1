@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<style type="text/css">
+			body {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				width: 100%;
+				height: 100%;
+			}
+			
+			.loop-run {
+				top: 200px;
+				width: 600px;
+				height: 200px;
+				background: #005E82;
+				position: relative;
+				/*border-radius: 50%;*/
+			}
+			
+			.circle {
+				width: 60px;
+				height: 60px;
+				background: #F0506E;
+				/*border-radius: 50%;*/
+				position: absolute;
+			}
+			/*#circle1 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -24.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -21s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -21s infinite alternate none paused;
+			}
+			
+			#circle2 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -22.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate none paused;
+			}
+			
+			#circle3 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -20.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate none paused;
+			}
+			
+			#circle4 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -18.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate none paused;
+			}
+			
+			#circle5 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -16.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate none paused;
+			}
+			
+			#circle6 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -14.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate none paused;
+			}
+			
+			#circle7 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -12.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate none paused;
+			}*/
+			/*.circle1 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -3.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -7s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -7s infinite alternate none paused;
+			}
+			
+			.circle2 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -5.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate none paused;
+			}
+			
+			.circle3 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -7.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate none paused;
+			}
+			
+			.circle4 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -9.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate none paused;
+			}
+			
+			.circle5 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -11.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate none paused;
+			}
+			
+			.circle6 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -13.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate none paused;
+			}
+			
+			.circle7 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -15.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate none paused;
+			}*/
+			
+			@keyframes animX {
+				0% {
+					left: -5%;
+				}
+				100% {
+					left: 95%;
+				}
+			}
+			
+			@keyframes animY {
+				0% {
+					top: -5%;
+				}
+				100% {
+					top: 90%;
+				}
+			}
+			
+			@keyframes scale {
+				0% {
+					transform: scale(0.5);
+				}
+				50% {
+					transform: scale(1);
+				}
+				100% {
+					transform: scale(0.5);
+				}
+			}
+		</style>
+		<script src="../js/jquery.min.js"></script>
+	</head>
+
+	<body>
+		<div class="loop-run" id="zhuanpan">
+			<!--<div id="circle1" class="circle circle1" index=0>1</div>
+			<div id="circle2" class="circle circle2" index=1>2</div>
+			<div id="circle3" class="circle circle3" index=2>3</div>
+			<div id="circle4" class="circle circle4" index=3>4</div>
+			<div id="circle5" class="circle circle5" index=4>5</div>
+			<div id="circle6" class="circle circle6" index=5>6</div>
+			<div id="circle7" class="circle circle7" index=6>7</div>-->
+		</div>
+	</body>
+	<script>
+		$(function() {
+			//顺时针
+			var clockwise = [
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -24.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -21s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -21s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -22.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -20.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -18.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -16.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -14.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -12.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate none paused'
+			];
+			//逆时针
+			var anticlockwise = [
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -3.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -7s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -7s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -5.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -7.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -9.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -11.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -13.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate none paused',
+				'animX 7s cubic-bezier(0.36, 0, 0.64, 1) -15.5s infinite alternate none paused, animY 7s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate none paused, scale 14s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate none paused'
+			];
+
+			var timer = [{
+					_class: 'circle1',
+					p: 0,
+					time: 0
+				},
+				{
+					_class: 'circle2',
+					p: 1,
+					time: 2000
+				},
+				{
+					_class: 'circle3',
+					p: 2,
+					time: 4000
+				},
+				{
+					_class: 'circle4',
+					p: 3,
+					time: 6000
+				},
+				{
+					_class: 'circle5',
+					p: 4,
+					time: 6000
+				},
+				{
+					_class: 'circle6',
+					p: 5,
+					time: 4000
+				},
+				{
+					_class: 'circle7',
+					p: 6,
+					time: 2000
+				}
+			];
+
+			function createHTML() {
+				var html = '';
+				$('#zhuanpan').html('');
+				for(var i = 0; i < timer.length; i++) {
+					html += '<div id="circle' + (i + 1) + '" class="circle circle' + (i + 1) + '" index=' + i + '>' + (i + 1) + '</div>';
+				}
+				$('#zhuanpan').append(html);
+
+				for(var i = 0; i < timer.length; i++) {
+					$('#' + timer[i]['_class']).css('animation', clockwise[i])
+				}
+				$('.circle').on('click', function() {
+					bindClick(this)
+				})
+			}
+
+			createHTML();
+
+			function bindClick(_this) {
+				var index = parseInt($(_this).attr('index'));
+				var targetIndex = 0;
+				var current = null;
+				for(var i = 0; i < timer.length; i++) {
+					if(timer[i]['_class'] == 'circle' + (index + 1)) {
+						current = timer[i];
+						targetIndex = i;
+					}
+				}
+				if(current['p'] < 4) {
+					for(var i = 0; i < timer.length; i++) {
+						$('#' + timer[i]['_class']).css('animation', clockwise[i])
+					}
+				} else {
+					for(var i = 0; i < timer.length; i++) {
+						$('#' + timer[i]['_class']).css('animation', anticlockwise[i])
+					}
+				}
+
+				$('.circle').css('animation-play-state', 'running')
+				setTimeout(() => {
+					$('.circle').css('animation-play-state', 'paused')
+					
+					createHTML();
+				}, current['time'])
+
+				var indexs = [0, 1, 2, 3, 4, 5, 6];
+				var times = [0, 2000, 4000, 6000, 6000, 4000, 2000];
+				switch(index) {
+					case 0:
+						indexs = [0, 1, 2, 3, 4, 5, 6];
+						break;
+					case 1:
+						indexs = [1, 2, 3, 4, 5, 6, 0];
+						break;
+					case 2:
+						indexs = [2, 3, 4, 5, 6, 0, 1];
+						break;
+					case 3:
+						indexs = [3, 4, 5, 6, 0, 1, 2];
+						break;
+					case 4:
+						indexs = [4, 5, 6, 0, 1, 2, 3];
+						break;
+					case 5:
+						indexs = [5, 6, 0, 1, 2, 3, 4];
+						break;
+					case 6:
+						indexs = [6, 0, 1, 2, 3, 4, 5];
+						break;
+				}
+				var temp = [];
+				for(var i = 0; i < indexs.length; i++) {
+					temp.push({
+						_class: 'circle' + (indexs[i] + 1),
+						p: i,
+						time: times[i]
+					})
+				}
+
+				timer = temp;
+			}
+
+		})
+
+	</script>
+
+</html>

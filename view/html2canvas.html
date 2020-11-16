@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>html2canvas example</title>
+		<script src="../js/jquery.min.js"></script>
+		<!--////////////////////////地图打印输出-->
+		<script src="../js/print/html2canvas.js"></script>
+		<script src="../js/print/html2canvasforIE11.js"></script>
+		<script src="../js/print/html2canvasforIE9.js"></script>
+		<script src="../js/print/canvg.js"></script>
+		<script src="../js/print/rgbcolor.js"></script>
+		<script src="../js/print/JavaScript1.js"></script>
+
+		<!--////////////////////////地图打印输出-->
+	</head>
+	<script type="text/javascript">
+		function takeScreenshot() {
+			
+			exportMap();
+		}
+	</script>
+
+	<body>
+		<div id="map_layers" style="background:url(http://t3.tianditu.com/DataServer?T=vec_w&x=200&y=100&l=8&tk=6e9650f48c0a7f5212f2243a4af7f14b) 100%; width: 256px; height: 256px;">
+			<input type="button" value="截图" onclick="takeScreenshot()">
+		</div>
+	</body>
+
+</html>

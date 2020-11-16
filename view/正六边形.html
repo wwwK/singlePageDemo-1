@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="https://js.arcgis.com/3.27/esri/css/esri.css">
+		<script src="https://npmcdn.com/@turf/turf@5.1.6/turf.min.js"></script>
+		<script src="https://js.arcgis.com/3.27/"></script>
+		<style>
+			html,
+			body,
+			#map {
+				height: 100%;
+				width: 100%;
+				margin: 0;
+				padding: 0;
+				border: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map"></div>
+
+	</body>
+	<script>
+		require(["esri/map",
+			"esri/toolbars/draw",
+			"esri/toolbars/edit",
+			"esri/graphic",
+			"dojo/_base/event",
+			"esri/layers/GraphicsLayer",
+			"esri/geometry/webMercatorUtils",
+			"esri/symbols/SimpleMarkerSymbol",
+			"esri/symbols/SimpleFillSymbol",
+			"dojo/domReady!"
+		], function(Map, Draw, Edit, Graphic, event, GraphicsLayer, webMercatorUtils,SimpleMarkerSymbol,SimpleFillSymbol) {
+			var map = new Map("map", {
+				center: [104, 30],
+				zoom: 8,
+				basemap: "topo"
+			});
+
+			let layer = new GraphicsLayer();
+			map.addLayer(layer);
+
+			let center = [104, 30];//中心
+			let radius = 50;//半径
+			let options = {
+				steps: 6,//正六边形
+				units: 'kilometers'//单位
+			};
+			let angle=330;//偏转角度
+			
+			let origin=esri.geometry.geographicToWebMercator(new esri.geometry.Point(center)); 
+			let psymbol=new SimpleMarkerSymbol();
+			let pgraphic=new Graphic(origin,psymbol);
+			layer.add(pgraphic);
+			
+			
+			let geom=createRegularHexagonByVertex({
+				center:center,
+				radius:radius,
+				options:options,
+				angle:angle
+			})
+			let hexagon = esri.geometry.geographicToWebMercator(new esri.geometry.Polygon(geom.geometry.coordinates));
+			let symbol=new SimpleFillSymbol();
+			let graphic=new Graphic(hexagon,symbol);
+			
+			layer.add(graphic);
+		});
+		
+		//生成正六边形（点在正六边形中心）
+		function createRegularHexagonByCenter(options) {
+			let geometry = turf.circle(options.center, options.radius, options.options);
+			
+			//return geometry;//返回未旋转正六边形
+			
+			let transedgeom = turf.transformRotate(geometry, options.angle, {pivot: options.center});
+			
+			return transedgeom;
+		}
+		//生成正六边形（点为正六边形一个顶点）
+		function createRegularHexagonByVertex(options) {
+			var point=turf.point(options.center);
+			
+			var center=turf.transformTranslate(point, options.radius, 0,{
+				units:options.options.units
+			});
+			
+			let geometry = turf.circle(center, options.radius, options.options);
+			
+			let transedgeom = turf.transformRotate(geometry, options.angle, {pivot: options.center});
+			
+			return transedgeom;
+		}
+	</script>
+
+</html>

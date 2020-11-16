@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script>
+			function DBSCAN(arr, Ra, MinPts) { //arr 输入的数据集 R 半径 MinPts 领域密度域值
+				this.Ra = Ra;
+				this.MinPts = MinPts;
+				this.arr = [];
+				this.value = new Array(); //用于返回簇
+				this.Clusterid = 1;
+				for(var i in arr) {
+					this.arr[i] = new Array();
+					this.arr[i].x = arr[i].x;
+					this.arr[i].y = arr[i].y;
+					this.arr[i].vis = false; //是否遍历
+					this.arr[i].cluster = 0; //默认，代表噪声
+				}
+				this.exec = exec;
+				this.Output = Output;
+
+				for(var i in this.arr) {
+					var P = this.exec(i);
+					if(P) {
+						this.Clusterid++; //如果有簇生 成，就把计数+1
+					}
+				}
+			}
+
+			function exec(i) {
+				if(!this.arr[i].vis) { //如果该点未被访问，则执行
+					this.arr[i].vis = true;
+					var sum = 0; //计数
+					var brr = []; //存储密度范围内的点
+					for(var j in this.arr) {
+						var c = Math.pow(this.arr[i].x - this.arr[j].x, 2);
+						var d = Math.pow(this.arr[i].y - this.arr[j].y, 2);
+						var e = Math.pow(c + d, 0.5);
+						if(e < this.Ra) {
+							sum++;
+							brr.push(j);
+						}
+					}
+					if(sum > this.MinPts) { //满足密度条件
+						this.arr[i].cluster = this.Clusterid; //标记簇序号
+						for(m in brr) { //对密度范围内所有点递归
+							this.exec(brr[m]);
+						}
+						return true;
+					} else { //不满足密度条件
+						sum = 0; //计数清空
+						brr.length = 0; //存储的点清空
+						return false;
+					}
+
+				}
+			}
+
+			function Output() {
+
+				for(var j = 0; j this.value[j] = new Array();
+				}
+				for(var i in this.arr) {
+					this.value[this.arr[i].cluster].push(this.arr[i]);
+				}
+				for(var i in this.value) {
+					for(var j in this.value[i]) {
+						document.write("{x:" + this.value[i][j].x + ",y:" + this.value[i][j].y + "}");
+					}
+					document.write("");
+				}
+
+			}
+
+			var crr = [{
+					x: 1,
+					y: 1
+				},
+				{
+					x: 4.5,
+					y: 4.5
+				},
+				{
+					x: 6,
+					y: 4.7
+				},
+				{
+					x: 8,
+					y: 1
+				},
+				{
+					x: 1,
+					y: 1.8
+				},
+				{
+					x: 5,
+					y: 4
+				},
+				{
+					x: 6,
+					y: 5.2
+				},
+				{
+					x: 20,
+					y: 8
+				},
+				{
+					x: 1.5,
+					y: 0.9
+				},
+				{
+					x: 5,
+					y: 5
+				},
+				{
+					x: 1.6,
+					y: 2
+				},
+				{
+					x: 5.2,
+					y: 4
+				},
+				{
+					x: 1.6,
+					y: 1.5
+				},
+				{
+					x: 5.2,
+					y: 4.5
+				},
+				{
+					x: 2,
+					y: 1
+				},
+				{
+					x: 6,
+					y: 4
+				},
+				{
+					x: 2,
+					y: 1.5
+				},
+				{
+					x: 1.8,
+					y: 1
+				}
+			];
+			var D = new DBSCAN(crr, 1.5, 4);
+			D.Output();
+		</script>
+	</head>
+
+	<body>
+	</body>
+
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>历史轨迹</title>
+		<link rel="stylesheet" href="../css/map.css" />
+		<link rel="stylesheet" href="https://js.arcgis.com/3.27/esri/css/esri.css">
+		<script type="text/javascript" src="../util/turf.min.js" ></script>
+		<script src="https://js.arcgis.com/3.27/"></script>
+		<script src="../util/tdtlayers.js"></script>
+		<script type="text/javascript" src="../util/Douglas-Peuker.js"></script>
+		<script src="../js/trajectory.js"></script>
+		<script type="text/javascript" src="../util/curve_calc.min.js"></script>
+	</head>
+
+	<body>
+		<div id="map"></div>
+		<script>
+			var pointlayer, personlayer;
+			require(["esri/map", "esri/layers/GraphicsLayer", "dojo/domReady!"], function(Map, GraphicsLayer) {
+				var map = new Map("map", {
+					logo: false,
+					nav: false,
+					slider: false
+				});
+				defineClassesBeforInitMap();
+				var roadlayer = new TDTRoadLayer();
+				var annolayer = new TDTAnnoLayer();
+				map.addLayer(roadlayer);
+				map.addLayer(annolayer);
+				var fullExtent = new esri.geometry.Extent(104.15612007614814, 30.5668712213286, 104.38794217718669, 30.629864300227977, map.spatialReference);
+				map.setExtent(fullExtent);
+				var pathlayer = new GraphicsLayer();
+				map.addLayer(pathlayer);
+				pointlayer = new GraphicsLayer();
+				map.addLayer(pointlayer);
+				personlayer = new GraphicsLayer();
+				map.addLayer(personlayer);
+
+				var path = formatedata();
+				
+				//原始
+				var originpathsymbol = new esri.symbol.SimpleLineSymbol(
+					esri.symbol.SimpleLineSymbol.STYLE_SOLID,
+					new esri.Color([193, 35, 43]), 10);
+				var originpathgeometry = new esri.geometry.Polyline(path);
+				var origingraphic = new esri.Graphic(originpathgeometry, originpathsymbol);
+				//pathlayer.add(origingraphic);
+
+				//去噪
+				var vacuatedpath = thirdlinearSmooth5(secondlinearSmooth5(firstlinearSmooth5(deepClone(path))));
+				var vacuatedsymbol = new esri.symbol.SimpleLineSymbol(
+					esri.symbol.SimpleLineSymbol.STYLE_SOLID,
+					new esri.Color([181, 195, 52]), 3);
+				var vacuatedgeometry = new esri.geometry.Polyline(vacuatedpath);
+				var vacuatedgraphic = new esri.Graphic(vacuatedgeometry, vacuatedsymbol);
+				//pathlayer.add(vacuatedgraphic);
+
+				//插值
+				var interpolationpath = setData(getCurvePoints(getData(deepClone(vacuatedpath)), 0.00001, 15, false))
+				var interpolationsymbol = new esri.symbol.SimpleLineSymbol(
+					esri.symbol.SimpleLineSymbol.STYLE_SOLID,
+					new esri.Color([252, 206, 16]), 3);
+				var interpolationgeometry = new esri.geometry.Polyline(interpolationpath);
+				var interpolationgraphic = new esri.Graphic(interpolationgeometry, interpolationsymbol);
+				//pathlayer.add(interpolationgraphic);
+
+				//抽稀
+				var filterdpath = simplify(deepClone(interpolationpath), 0.00001);
+				var filtersymbol = new esri.symbol.SimpleLineSymbol(
+					esri.symbol.SimpleLineSymbol.STYLE_SOLID,
+					new esri.Color([1, 184, 33]), 10);
+				var filtergeometry = new esri.geometry.Polyline(filterdpath);
+				var filtergraphic = new esri.Graphic(filtergeometry, filtersymbol);
+				pathlayer.add(filtergraphic);
+				
+				
+				linechunks(filterdpath);
+				
+				addArrow(linechunks(filterdpath,150));
+
+				addStartEnd(filterdpath);
+				
+				loopPaths(filterdpath);
+			})
+
+
+			function linechunks(path,segment){
+				var line = turf.lineString(path);
+				var chunks = turf.lineChunk(line, segment, {units: 'meters'});
+				var points=[];
+				var features=chunks.features;
+				for(var i=0;i<features.length;i++){
+					points.push(features[i].geometry.coordinates[features[i].geometry.coordinates.length-2]);
+					points.push(features[i].geometry.coordinates[features[i].geometry.coordinates.length-1]);
+				}
+				return points;
+			}
+			
+			function addStartEnd(path) {
+				var startsymbol = new esri.symbol.PictureMarkerSymbol("../img/start.png", 37, 60);
+				var endsymbol = new esri.symbol.PictureMarkerSymbol("../img/end.png", 37, 60);
+				startsymbol.setOffset(18, 30);
+				endsymbol.setOffset(18, 30);
+				var startpoint = new esri.geometry.Point(path[0]);
+				var sgraphic = new esri.Graphic(startpoint, startsymbol);
+				var endpoint = new esri.geometry.Point(path[path.length - 1]);
+				var egraphic = new esri.Graphic(endpoint, endsymbol);
+				pointlayer.add(sgraphic);
+				pointlayer.add(egraphic);
+			}
+
+			function addArrow(path) {
+				var graphics = [];
+				for(var i = 1; i < path.length; i=i+2) {
+					var angle = getangle(path[i - 1], path[i]);
+					var arrowsymbol = new esri.symbol.PictureMarkerSymbol("../img/arrow.png", 12, 12);
+					arrowsymbol.setAngle(angle);
+					var arrowpoint = new esri.geometry.Point(getmiddle(path[i - 1], path[i]));
+					var graphic = new esri.Graphic(arrowpoint, arrowsymbol);
+					graphics.push(graphic);
+				}
+				var graphicset = simplifyPath(graphics);
+				for(var i = 0; i < graphicset.length; i++) {
+					pointlayer.add(graphicset[i]);
+				}
+			}
+
+			var pathindex = 0;
+			function loopPaths(path) {
+				personlayer.clear();
+				if(pathindex < path.length - 1) {
+					var angle = getangle(path[pathindex], path[pathindex + 1]);
+					var imgurl = "../img/timgL.gif";
+					if(angle > 90 && angle < 270) {
+						imgurl = "../img/timgL.gif";
+					} else {
+						imgurl = "../img/timg.gif";
+					}
+					var symbol = new esri.symbol.PictureMarkerSymbol(imgurl, 64, 64);
+					symbol.setOffset(0, 18);
+					var personpoint = new esri.geometry.Point(path[pathindex + 1]);
+					var persongraphic = new esri.Graphic(personpoint, symbol);
+					personlayer.add(persongraphic);
+				} else {
+					pathindex = 0;
+				}
+				pathindex++;
+				setTimeout(function() {
+					loopPaths(path);
+				}, 200);
+			}
+
+			function simplifyPath(graphics) {
+				var graphicset = [];
+				if(graphics.length > 1000) {
+					for(var i = 0; i < graphics.length; i = i + 8) {
+						graphicset.push(graphics[i]);
+					}
+				} else if(graphics.length > 500) {
+					for(var i = 0; i < graphics.length; i = i + 5) {
+						graphicset.push(graphics[i]);
+					}
+				} else if(graphics.length > 100) {
+					for(var i = 0; i < graphics.length; i = i + 4) {
+						graphicset.push(graphics[i]);
+					}
+				} else if(graphics.length > 50) {
+					for(var i = 0; i < graphics.length; i = i + 3) {
+						graphicset.push(graphics[i]);
+					}
+				} else if(graphics.length > 20) {
+					for(var i = 0; i < graphics.length; i = i + 2) {
+						graphicset.push(graphics[i]);
+					}
+				} else {
+					for(var i = 0; i < graphics.length; i++) {
+						graphicset.push(graphics[i]);
+					}
+				}
+				return graphicset;
+			}
+
+			function getmiddle(p1, p2) {
+				var x = (p2[0] + p1[0]) / 2;
+				var y = (p2[1] + p1[1]) / 2;
+				return [x, y];
+			}
+
+			function getangle(p1, p2) {
+				//两点的x、y值
+				var x = p2[0] - p1[0];
+				var y = p2[1] - p1[1];
+				hypotenuse = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+				//斜边长度
+				cos = x / hypotenuse;
+				radian = Math.acos(cos);
+				//求出弧度
+				angle = 180 / (Math.PI / radian);
+				//用弧度算出角度        
+				if(y < 0) {
+					angle = 360 - angle;
+				} else if((y == 0) && (x < 0)) {
+					angle = 180;
+				}
+				if(angle < 0) {
+					angle = 360 + angle;
+				}
+				angle = 360 - angle;
+				return angle;
+			}
+
+			function getData(data) {
+				var arr = [];
+				for(var i = 0; i < data.length; i++) {
+					arr.push(data[i][0]);
+					arr.push(data[i][1]);
+				}
+				return arr;
+			}
+
+			function setData(data) {
+				var arr = [];
+				for(var i = 0; i < data.length; i = i + 2) {
+					arr.push([data[i], data[i + 1]]);
+				}
+				return arr;
+			}
+
+			function formatedata() {
+				var pathstr = "104.282364 30.569014,104.281998 30.568684,104.281578 30.568398,104.281143 30.56813,104.280609 30.568136,104.280289 30.568504,104.280014 30.568905,104.279755 30.569309,104.27948 30.56971,104.27919 30.570101,104.278915 30.570499,104.278656 30.57091,104.278381 30.571308,104.278114 30.571718,104.27784 30.572124,104.27758 30.572531,104.277313 30.572929,104.277046 30.573332,104.276779 30.573738,104.276512 30.574144,104.276237 30.574545,104.275955 30.574949,104.275681 30.575352,104.275414 30.575768,104.275146 30.57618,104.274864 30.576574,104.274612 30.576982,104.274353 30.577389,104.274078 30.577784,104.273819 30.578188,104.273521 30.578575,104.273247 30.578978,104.272987 30.579378,104.272713 30.579775,104.272446 30.580183,104.272163 30.580584,104.271896 30.58099,104.271622 30.58139,104.271347 30.581797,104.271065 30.582191,104.270538 30.582308,104.270058 30.582088,104.269577 30.581865,104.269096 30.581644,104.268616 30.581427,104.268127 30.581215,104.267654 30.580996,104.267174 30.580769,104.266693 30.580545,104.266228 30.580326,104.265747 30.580112,104.265282 30.579891,104.264801 30.579666,104.264343 30.579439,104.26387 30.579227,104.263382 30.579002,104.262909 30.578781,104.262421 30.578554,104.261948 30.578339,104.261475 30.578117,104.260994 30.577892,104.260521 30.577663,104.26004 30.577442,104.259567 30.577213,104.259087 30.576982,104.258614 30.576765,104.258133 30.57654,104.25766 30.576311,104.257179 30.576094,104.256737 30.575827,104.256653 30.575365,104.256905 30.574953,104.257172 30.574533,104.257423 30.574125,104.257675 30.573717,104.257935 30.573303,104.258202 30.572895,104.258446 30.572487,104.258705 30.572077,104.258965 30.571671,104.259193 30.571255,104.259438 30.570833,104.259705 30.570425,104.259949 30.570017,104.260193 30.569607,104.260452 30.569195,104.260704 30.568781,104.260963 30.568377,104.261185 30.567951,104.261421 30.567539,104.261665 30.567133,104.26194 30.566736,104.262192 30.566332,104.262527 30.565975,104.262306 30.566404,104.262047 30.566809,104.26178 30.567219,104.26152 30.567621,104.261261 30.568035,104.261002 30.568443,104.260742 30.568851,104.26049 30.569256,104.260231 30.56966,104.259964 30.570066,104.259712 30.570477,104.259453 30.570885,104.259209 30.571302,104.258949 30.571714,104.258705 30.572138,104.258461 30.572556,104.258202 30.572979,104.257957 30.573402,104.257713 30.573833,104.257477 30.574249,104.257256 30.574663,104.256996 30.575066,104.256775 30.575483,104.256523 30.575893,104.256256 30.576303,104.255959 30.576698,104.255699 30.577101,104.255432 30.577511,104.255165 30.577929,104.254898 30.578344,104.254623 30.578739,104.254143 30.578951,104.253624 30.578844,104.253166 30.578598,104.252708 30.578335,104.252258 30.578085,104.251801 30.577833,104.251343 30.577583,104.250885 30.577343,104.250435 30.577091,104.249962 30.576845,104.249481 30.57663,104.248978 30.576431,104.248474 30.57626,104.247963 30.576113,104.247437 30.576,104.24688 30.575954,104.24633 30.575994,104.245804 30.576111,104.245285 30.576263,104.244766 30.576414,104.244255 30.576565,104.243752 30.576736,104.243248 30.576923,104.242744 30.57711,104.242249 30.577295,104.241753 30.577482,104.241249 30.577675,104.240753 30.577864,104.240257 30.578037,104.239769 30.578222,104.239281 30.578411,104.238792 30.578604,104.238304 30.578793,104.237808 30.578985,104.237305 30.57918,104.236809 30.579372,104.236313 30.579576,104.235809 30.579777,104.235321 30.579966,104.234825 30.580156,104.234329 30.580351,104.233833 30.580544,104.23333 30.580742,104.232826 30.580929,104.23233 30.581116,104.231842 30.581316,104.231369 30.581518,104.230865 30.581713,104.23037 30.581905,104.229866 30.5821,104.22937 30.582291,104.228874 30.582479,104.228378 30.582666,104.227875 30.582832,104.227432 30.583092,104.227043 30.582775,104.226791 30.582375,104.226593 30.581944,104.226402 30.581509,104.226204 30.581066,104.226013 30.580622,104.225815 30.580181,104.225616 30.579742,104.225418 30.579313,104.22522 30.578875,104.225029 30.578445,104.224838 30.577999,104.224648 30.577564,104.224457 30.577133,104.224258 30.576702,104.22406 30.57626,104.223862 30.575827,104.223679 30.575392,104.223473 30.574951,104.223267 30.574524,104.223068 30.574097,104.222855 30.573677,104.222672 30.573238,104.222466 30.572817,104.222794 30.573174,104.223328 30.57309,104.223816 30.572865,104.224312 30.572676,104.224838 30.572519,104.225365 30.572378,104.225891 30.572258,104.22641 30.572136,104.226898 30.57196,104.227432 30.57185,104.227974 30.571751,104.228485 30.571619,104.229004 30.571489,104.229523 30.57136,104.230049 30.571222,104.230553 30.571087,104.231087 30.570951,104.231613 30.570814,104.23214 30.570667,104.232666 30.57052,104.233177 30.570383,104.233688 30.570251,104.234222 30.570112,104.234756 30.569981,104.235275 30.569849,104.235786 30.569725,104.236305 30.569595,104.236847 30.569475,104.237389 30.569344,104.237915 30.569208,104.238441 30.569082,104.23896 30.568949,104.239487 30.56881,104.240005 30.568676,104.240532 30.568546,104.241043 30.568411,104.24157 30.568274,104.242088 30.568136,104.242607 30.568001,104.243126 30.567869,104.243652 30.567724,104.244164 30.567591,104.24469 30.567463,104.245316 30.56731,104.245949 30.567146,104.246468 30.567009,104.247078 30.566849,104.247635 30.566698,104.248169 30.566553,104.248795 30.566395,104.24942 30.566278,104.249962 30.566082,104.25058 30.565895,104.251167 30.565725,104.251724 30.565567,104.252266 30.565407,104.252838 30.565239,104.253387 30.565075,104.253899 30.564919,104.254463 30.564753,104.255051 30.564583,104.255608 30.564423,104.256218 30.56426,104.256775 30.564106,104.257294 30.563978,104.257835 30.563864,104.258263 30.564167,104.258492 30.564663,104.258705 30.565123,104.258896 30.56558,104.259109 30.566027,104.259323 30.566513,104.259544 30.567039,104.259773 30.567568,104.259972 30.568045,104.260162 30.568483,104.260376 30.568926,104.260704 30.569347,104.261246 30.569614,104.261749 30.569847,104.262222 30.57007,104.262711 30.570301,104.263268 30.570559,104.263786 30.570803,104.26429 30.571041,104.264763 30.571262,104.265244 30.571484,104.265724 30.571716,104.26622 30.571955,104.266777 30.572216,104.267311 30.57247,104.26786 30.572716,104.268326 30.572939,104.268806 30.573162,104.269279 30.573385,104.269768 30.57361,104.270309 30.57387,104.270836 30.57412,104.27137 30.574364,104.271873 30.574615,104.272354 30.574844,104.272896 30.575092,104.273392 30.575314,104.273872 30.575529,104.274353 30.575737,104.274857 30.575972,104.275337 30.575747,104.27565 30.575293,104.275955 30.57485,104.27626 30.574402,104.27655 30.573967,104.276833 30.573563,104.277138 30.573095,104.277405 30.572685,104.27771 30.572243,104.277992 30.571835,104.278259 30.57143,104.278542 30.571007,104.278824 30.57058,104.279106 30.570162,104.279381 30.569767,104.279655 30.569368,104.27993 30.568974,104.280197 30.568558,104.280487 30.568132,104.281029 30.568062,104.281441 30.568373,104.281845 30.568672,104.282219 30.568998,104.282166 30.569456,104.282562 30.569143,104.282433 30.569592,104.281944 30.56941,104.281715 30.569881,104.28215 30.569605,104.281609 30.569773,104.281052 30.569921,104.280525 30.570131,104.280113 30.570473,104.280365 30.570063,104.280563 30.569618,104.281097 30.56953,104.281723 30.569414,104.282295 30.569389,104.282043 30.569834,104.282532 30.569605,104.282158 30.569267,104.282219 30.56975,104.282211 30.570259,104.282127 30.57078,104.281563 30.570856,104.281021 30.570892,104.280495 30.571136,104.279953 30.571299,104.279419 30.571394,104.278877 30.571259,104.278259 30.571115,104.277679 30.571095,104.278267 30.570915,104.278824 30.570847,104.279289 30.570492,104.279739 30.570227,104.280266 30.570095,104.280823 30.569984,104.281265 30.569721,104.28186 30.56958,104.282387 30.569553,104.282623 30.569998,104.282379 30.569584,104.28257 30.569147,104.2826 30.569641,104.2827 30.569189,104.282333 30.569542,104.282677 30.569189,104.28241 30.569633,104.282555 30.569193,104.282913 30.568806,104.28273 30.569298,104.282173 30.569456,104.2827 30.569349,104.282669 30.569872,104.282135 30.569815,104.282463 30.569447,104.282021 30.569857,104.28215 30.569393,104.282486 30.569021,104.282516 30.569498,104.282578 30.568998,104.282692 30.568529,104.282425 30.568947,104.282387 30.569429,104.282486 30.568966,104.282272 30.569454";
+				var arr = pathstr.split(',');
+				var newarr = [];
+				for(var i = 0; i < arr.length; i++) {
+					newarr[i] = arr[i].split(' ');
+				}
+				for(var i = 0; i < newarr.length; i++) {
+					newarr[i][0] = parseFloat(newarr[i][0]);
+					newarr[i][1] = parseFloat(newarr[i][1]);
+				}
+				return newarr;
+			}
+
+			//深拷贝
+			function deepClone(data) {
+				var type = getType(data);
+				var obj;
+				if(type === 'array') {
+					obj = [];
+				} else if(type === 'object') {
+					obj = {};
+				} else {
+					//不再具有下一层次
+					return data;
+				}
+				if(type === 'array') {
+					for(var i = 0, len = data.length; i < len; i++) {
+						obj.push(deepClone(data[i]));
+					}
+				} else if(type === 'object') {
+					for(var key in data) {
+						obj[key] = deepClone(data[key]);
+					}
+				}
+				return obj;
+			}
+
+			function getType(obj) {
+				//tostring会返回对应不同的标签的构造函数
+				var toString = Object.prototype.toString;
+				var map = {
+					'[object Boolean]': 'boolean',
+					'[object Number]': 'number',
+					'[object String]': 'string',
+					'[object Function]': 'function',
+					'[object Array]': 'array',
+					'[object Date]': 'date',
+					'[object RegExp]': 'regExp',
+					'[object Undefined]': 'undefined',
+					'[object Null]': 'null',
+					'[object Object]': 'object'
+				};
+				if(obj instanceof Element) {
+					return 'element';
+				}
+				return map[toString.call(obj)];
+			}
+		</script>
+	</body>
+
+</html>

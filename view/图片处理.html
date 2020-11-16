@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<script type="text/javascript">
+			function $$(id) {
+				return document.getElementById(id);
+			}
+			window.onload = function() {
+				var ctx = $$("cvs").getContext("2d");
+				var image = new Image();
+				image.src = "../img/princess.png";
+				ctx.globalAlpha = 1; // 全局透明度
+				
+				
+				
+				image.onload = function() {
+					
+					
+					ctx.drawImage(image, 0, 0);
+					
+					
+					var imgData = ctx.getImageData(0, 0, 256, 256);
+					var data = imgData.data;
+	
+					/*颜色反转*/
+//					for(var i = 0; i < data.length; i += 4) {
+//						data[i + 0] = 255 - data[i + 0];
+//						data[i + 1] = 255 - data[i + 1];
+//						data[i + 2] = 255 - data[i + 2];
+//					}
+
+					/*黑白效果(灰度图)*/
+					for(var i = 0; i < data.length; i += 4) {
+						/*加权平均数
+						var average = (data[i+0]*0.3+data[i+1]*0.6+data[i+2]*0.1)/3;
+						*/
+
+						var average = (data[i+0]*0.1+data[i+1]*0.8+data[i+2]*0.4)/3;
+						data[i + 0] = average;
+						data[i + 1] = average;
+						data[i + 2] = average;
+					}
+
+					/*增强亮度*/
+					for(var i = 0; i < data.length; i += 4) {
+						var x = 10;
+						data[i + 0] += x;
+						data[i + 1] += x;
+						data[i + 2] += x;
+					}
+					/*复古效果*/
+//					for(var i = 0; i < data.length; i += 4) {
+//						var r = data[i + 0];
+//						var g = data[i + 1];
+//						var b = data[i + 2];
+//						data[i + 0] = r * 0.39 + g * 0.76 + b * 0.18;
+//						data[i + 1] = r * 0.35 + g * 0.68 + b * 0.16;
+//						data[i + 2] = r * 0.27 + g * 0.53 + b * 0.13;
+//					}
+
+					/*红色蒙版*/
+//					for(var i = 0; i < data.length; i += 4) {
+//						var r = data[i + 0];
+//						var g = data[i + 1];
+//						var b = data[i + 2];
+//						var average = (r + g + b) / 3;
+//						data[i + 0] = average;
+//						data[i + 1] = 0;
+//						data[i + 2] = 0;
+//					}
+
+					/*透明效果*/
+//					for(var i = 0; i < data.length; i += 4) {
+//						data[i + 3] = data[i + 3] * 1;
+//					}
+
+					ctx.putImageData(imgData, 0, 0);
+					
+					
+				}
+			}
+		</script>
+	</head>
+
+	<body>
+		<canvas id="cvs" width="256px" height="256px"></canvas>
+		<img src="../img/princess.png" width="256px" height="256px"></img>
+	</body>
+
+</html>

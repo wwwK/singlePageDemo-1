@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="../css/mobileSelect.css" />
+		<script type="text/javascript" src="../js/mobileSelect.js"></script>
+	</head>
+
+	<body>
+		<button id="select">弹出选择框</button>
+		<script>
+			var mobileSelect1 = new MobileSelect({
+				trigger: '#select',
+				title: '单项选择',
+				wheels: [{
+					data: ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+				}],
+				position: [2]
+			});
+		</script>
+	</body>
+
+</html>

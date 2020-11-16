@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../js/ol.js"></script>
+		<script src="../js/jquery.min.js"></script>
+		<style>
+			html,
+			body,
+			.map {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="map" id="map">
+
+		</div>
+		<script>
+			let map = new ol.Map({
+				target: 'map',
+				interactions: ol.interaction.defaults({
+					altShiftDragRotate: false,
+					pinchRotate: false
+				}),
+				view: new ol.View({
+					center: ol.proj.transform([104, 30], 'EPSG:4326', 'EPSG:3857'),
+					zoom: 8,
+					maxZoom: 18,
+					minZoom: 2
+				})
+			});
+
+			let roadLayer = new ol.layer.Tile({
+				title: "3857底图",
+				source: new ol.source.XYZ({
+					tileUrlFunction: function(tileCoord) {
+						let oo = "00000000";
+						let zz = tileCoord[0];
+						if(zz < 10) {
+							zz = '0' + zz;
+						}
+						let z = "L" + zz;
+
+						let xx = tileCoord[1].toString(16);
+						let x = "C" + oo.substring(0, 8 - xx.length) + xx;
+						let yy = (-tileCoord[2] - 1).toString(16); //注意此处，计算方式变了
+						let y = "R" + oo.substring(0, 8 - yy.length) + yy;
+						return 'http://223.86.3.47:28080/api/Handler/Utils.ashx?method=convertImg&x=' + z + '&y=' + y + '&z=' + x
+					},
+					projection: 'EPSG:3857'
+				})
+			});
+			map.addLayer(roadLayer);
+
+			let rangeLyaer = new ol.layer.Vector({
+				source: new ol.source.Vector({
+					features: []
+				})
+			});
+			map.addLayer(rangeLyaer);
+
+			var coordinates = structureSector({
+				x: 104,
+				y: 30
+			}, 1000, 0, 30);
+
+			console.log(coordinates)
+			var wktfeature = new ol.Feature(new ol.geom.Polygon([coordinates]))
+			console.log(wktfeature);;
+			rangeLyaer.getSource().addFeature(wktfeature);
+
+			setTimeout(() => {
+				let size = map.getSize();
+				if(rangeLyaer.getSource().getFeatures().length) {
+					let extent = rangeLyaer.getSource().getExtent();
+					map.getView().fit(extent, {
+						size: [size[0] * 1, size[1] * 1]
+					});
+				}
+			}, 300)
+
+			function structureSector(point, distance, stangle, angle) {
+				var ShanXingR = distance / 1000.0;
+				var circleR = 0.05;
+				var ShanXingAngel = 50;
+				var ShanXingPointNum = 50;
+				var CirclePointNum = 360;
+				var rad = Math.PI / 180;
+				var CutRad = 2.5
+
+				var converted = ol.proj.transform([point.x, point.y], 'EPSG:4326', 'EPSG:3857');
+				var x = converted[0];
+				var y = converted[1];
+
+				if(angle >= 360) { //室内
+					var coordinates = [];
+					for(var i = stangle; i < angle + 1; i++) {
+						if(i > 360) i = i % 360;
+						var rad_t = i * Math.PI / 180;
+						var _x = x + (distance * Math.cos(rad_t));
+						var _y = y + (distance * Math.sin(rad_t));
+						coordinates.push([_x, _y])
+					}
+					return coordinates;
+				}
+				var p_lon = point.x;
+				var p_lat = point.y;
+				var ShanXingPerPointAngel = ShanXingAngel / ShanXingPointNum;
+				var rdloncos = 111.319 * Math.cos(p_lat * rad)
+				var coordinates = [
+					[x, y]
+				];
+
+				for(var i = 0; i < angle + 1; i++) {
+					if(!stangle) stangle = 0;
+					var currentAngel = stangle - ShanXingAngel / 2 + ShanXingPerPointAngel * i;
+					if(currentAngel > 360) currentAngel = currentAngel - 360;
+					var rslonX = ShanXingR * Math.sin(currentAngel * rad)
+					var rslatX = ShanXingR * Math.cos(currentAngel * rad)
+					var lonX = p_lon + (rslonX / rdloncos)
+					var latX = p_lat + rslatX / 111.319;
+					var converted_t = ol.proj.transform([lonX, latX], 'EPSG:4326', 'EPSG:3857');
+					coordinates.push(converted_t);
+				}
+				coordinates.push([x, y]);
+				return coordinates;
+			}
+
+			function _createSector(center, randius, sAngle, angle) {
+				sAngle = (360 - sAngle) % 360;
+				let points = [];
+				points.push(center);
+				for(let i = 0; i <= angle; ++i) {
+					let x = center[0] + randius * Math.cos(Math.PI * (sAngle + i) / 180);
+					let y = center[1] + randius * Math.sin(Math.PI * (sAngle + i) / 180);
+					points.push([x, y]);
+				}
+				points.push(center);
+				return new ol.geom.Polygon([points]);
+			}
+			
+			
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../js/turf.min.js"></script>
+		<script src="../js/gradientColor.js"></script>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<script type="text/javascript" src="../js/require.min.js" data-main="../js/main"></script>
+		<style>
+			.cesium-viewer-navigationContainer {
+				display: none;
+			}
+			
+			html,
+			body,
+			#cesiumContainer {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				background-color: #000000;
+			}
+			/*隐藏超图水印*/
+			
+			.cesium-viewer-bottom {
+				display: none !important;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="cesiumContainer">
+		</div>
+	</body>
+	<script>
+		var cellsize = 0;
+
+		var colorSteps = null;
+
+		var viewer = null;
+
+		/*生成栅格
+		 */
+		function createRaster(extent) {
+			var raster = [];
+			var width = extent[2] - extent[0];
+			var height = extent[3] - extent[1];
+
+			cellsize = width >= height ? width / 200 : height / 200;
+
+			for(var i = extent[0]; i < extent[2] + cellsize; i = i + cellsize) {
+				for(var j = extent[1]; j < extent[3] + cellsize; j = j + cellsize) {
+					raster.push([i, j]);
+				}
+			}
+			return raster;
+		}
+		/*计算表面
+		 */
+		function calSurface(extent, coordinates, height) {
+			var raster = createRaster(extent);
+
+			var line = turf.lineString(coordinates[0]);
+
+			var buffered = turf.buffer(line, cellsize, {
+				units: 'degrees'
+			});
+
+			var points = turf.points(raster);
+
+			var ptsWithin = turf.pointsWithinPolygon(points, buffered);
+
+			var topEntity = [];
+
+			var searchWithin = turf.polygon(coordinates);
+			var topWithin = turf.pointsWithinPolygon(points, searchWithin);
+
+			var topentity = [];
+			for(var i = 0; i < topWithin.features.length; i++) {
+				var item = topWithin.features[i].geometry.coordinates;
+				topentity.push([item[0], item[1], height]);
+			}
+
+			var sideentity = calTopRasterEntity(ptsWithin, height);
+
+			var entity = sideentity.concat(topentity);
+
+			return entity
+		}
+		/*计算侧面栅格体
+		 */
+		function calTopRasterEntity(surface, height) {
+			var entity = [];
+
+			var cellheight = (cellsize * Math.PI * 2 * 6378137) / 360;
+
+			for(var i = 0; i < height + cellheight; i = i + cellheight) {
+				for(var j = 0; j < surface.features.length; j++) {
+					var item = surface.features[j].geometry.coordinates;
+					entity.push([item[0], item[1], i]);
+				}
+			}
+			return entity;
+		}
+
+		/*判断线是否穿过体
+		 */
+		function throughEntity(stPoint, enPoint, coordinates) {
+			var line = turf.lineString([
+				[stPoint[0], stPoint[1]],
+				[enPoint[0], enPoint[1]]
+			]);
+			var polygon = turf.polygon(coordinates);
+			return turf.booleanCrosses(line, polygon)
+		}
+
+		/*线性插值
+		 */
+		function linearInterpolation(stPoint, enPoint) {
+			var sourcePoint = (turf.toMercator(turf.point([
+				stPoint[0], stPoint[1]
+			]))).geometry.coordinates;
+			var targetPoint = (turf.toMercator(turf.point([
+				enPoint[0], enPoint[1]
+			]))).geometry.coordinates;
+
+			var distance = Math.sqrt(Math.pow((targetPoint[1] - sourcePoint[1]), 2) + Math.pow((targetPoint[0] - sourcePoint[0]), 2) + Math.pow((enPoint[2] - stPoint[2]), 2));
+
+			if(distance > 200) return 0;
+
+			return(stPoint[3] / -200) * distance + stPoint[3];
+		}
+		/*表面插值
+		 */
+		function calValue(extent, coordinates, height, source) {
+			var entity = calSurface(extent, coordinates, height);
+
+			var features = [];
+
+			for(var i = 0; i < entity.length; i++) {
+				var directed = throughEntity(entity[i], source, coordinates);
+				if(!directed) {
+					var value = linearInterpolation(source, entity[i]);
+					features.push({
+						coordinates: entity[i],
+						value: value,
+						material: getColor(value)
+					})
+				} else {
+					features.push({
+						coordinates: entity[i],
+						value: 0,
+						material: '#FFFFFF'
+					})
+				}
+			}
+			return features;
+		}
+		/*设置颜色
+		 */
+		function getColor(value) {
+			value = Math.ceil(value);
+			if(!colorSteps) {
+				colorSteps = new gradientColor('#FFFFFF', '#D84C29', 101);
+			}
+
+			return colorSteps[value];
+		}
+		/*点生成面
+		 */
+		function pointToPolygon(point) {
+			var minx = point[0] - cellsize;
+			var miny = point[1] - cellsize;
+			var maxx = point[0] + cellsize;
+			var maxy = point[1] + cellsize;
+			return [minx, miny, maxx, miny, maxx, maxy, minx, maxy];
+		}
+
+		function onload(Cesium) {
+			viewer = new Cesium.Viewer('cesiumContainer', {
+				infoBox: false
+			});
+			addEntity();
+		}
+		/*添加实体
+		 */
+		function addEntity() {
+			var entities = calValue([104.062, 30.662, 104.068, 30.668], [
+				[
+					[104.064, 30.664],
+					[104.066, 30.664],
+					[104.066, 30.665],
+					[104.065, 30.665],
+					[104.065, 30.666],
+					[104.064, 30.666],
+					[104.064, 30.664]
+				]
+			], 256, [104.063, 30.664, 20, 100]);
+
+			for(var i = 0; i < entities.length; i++) {
+				var polygon = pointToPolygon(entities[i].coordinates);
+				var height = entities[i].coordinates[2];
+				var extruededheight = (cellsize * Math.PI * 2 * 6378137) / 360;
+				viewer.entities.add({
+					polygon: {
+						hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(polygon)),
+						height: height,
+						extrudedHeight: extruededheight,
+						outline: false,
+						material: Cesium.Color.fromCssColorString(entities[i].material)
+					}
+				});
+			}
+			viewer.zoomTo(viewer.entities);
+		}
+
+		
+
+//		console.log(calValue([104.062, 30.662, 104.068, 30.668], [
+//				[
+//					[104.064, 30.664],
+//					[104.066, 30.664],
+//					[104.066, 30.665],
+//					[104.065, 30.665],
+//					[104.065, 30.666],
+//					[104.064, 30.666],
+//					[104.064, 30.664]
+//				]
+//			], 56, [104.063, 30.665, 20, 100]));
+	</script>
+
+</html>

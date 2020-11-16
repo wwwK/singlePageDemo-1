@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="https://js.arcgis.com/3.27/esri/css/esri.css">
+		<script src="https://js.arcgis.com/3.27/"></script>
+		<style>
+			html,
+			body,
+			#map {
+				height: 100%;
+				width: 100%;
+				margin: 0;
+				padding: 0;
+				border: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map"></div>
+	</body>
+	<script>
+		require([
+			"esri/map",
+			"dojo/domReady!"
+		], function(Map) {
+			var map = new Map("map", {
+				center: [104, 30],
+				zoom: 8,
+				basemap: "topo"
+			});
+			var temptime = new Date().getTime();
+			map.on('mouse-down', function(e) {
+				console.log('按下鼠标');
+				temptime = new Date().getTime();
+			});
+			map.on('mouse-up', function(e) {
+				console.log('松开鼠标')
+				var currenttime = new Date().getTime();
+				if((currenttime - temptime) < 3000) {
+					console.log('短按')
+				} else {
+					console.log('长按')
+				}
+			});
+		});
+	</script>
+
+</html>

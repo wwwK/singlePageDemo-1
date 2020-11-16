@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html class="dj_webkit dj_safari dj_ios dj_contentbox">
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+		<title>Relationship Renderer</title>
+
+		<link rel="stylesheet" href="https://js.arcgis.com/3.30/esri/css/esri.css">
+		<link rel="stylesheet" href="https://js.arcgis.com/3.30/dijit/themes/claro/claro.css">
+
+		<style>
+			html,
+			body,
+			#map {
+				padding: 0;
+				margin: 0;
+				height: 100%;
+				width: 100%;
+			}
+			
+			#menuDiv {
+				z-index: 65;
+				top: 0px;
+				right: 0px;
+				position: absolute;
+				max-width: 280px;
+				opacity: 0.9;
+				background-color: whitesmoke;
+				padding: 10px;
+			}
+		</style>
+
+		<script>
+			var dojoConfig = {
+				has: {
+					"esri-featurelayer-webgl": 1
+				}
+			};
+		</script>
+
+		<script src="https://js.arcgis.com/3.30/"></script>
+
+		<script>
+			require([
+					"esri/map",
+					"esri/layers/FeatureLayer",
+					"esri/renderers/smartMapping",
+					"esri/styles/relationship",
+					"esri/dijit/Legend",
+					"esri/dijit/PopupTemplate",
+					"dojo/domReady!"
+				],
+				function(
+					Map,
+					FeatureLayer,
+					smartMapping,
+					relationshipStyles,
+					Legend,
+					PopupTemplate
+				) {
+
+					// create relationship Renderer
+
+					var map = new Map("map", {
+						basemap: "gray",
+						center: [-97.29614, 19.54323],
+						zoom: 7
+					});
+
+					var url = "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Mexico_demographics/FeatureServer/0";
+
+					// Create new feature layer pointing to service with educational
+					// attainment data by city and assigns it a PopupTemplate
+
+					var layer = new FeatureLayer(url, {
+						outFields: ["NAME", "EDUC01_CY", "EDUCA_BASE", "AVGHHSZ_CY"],
+						infoTemplate: new PopupTemplate({
+							title: "{NAME}",
+							description: "{EDUC01_CY} people in this municipality didn't complete any formal education.",
+							fieldInfos: [{
+								fieldName: "EDUC01_CY",
+								label: "Population without formal education",
+								format: {
+									places: 0,
+									digitSeparator: true
+								}
+							}, {
+								fieldName: "EDUCA_BASE",
+								label: "Total population"
+							}, {
+								fieldName: "AVGHHSZ_CY",
+								label: "Average household size"
+							}]
+						})
+					});
+
+					// Add the layer to the map
+					map.addLayer(layer);
+
+				});
+		</script>
+	</head>
+
+	<body class="claro">
+		<div id="map" class="map" data-basemap="gray" data-zoom="7" data-scale="4622324.434309" data-loaded="">
+		</div>
+
+		<svg style="position: absolute;" width="0" height="0"></svg>
+	</body>
+
+</html>

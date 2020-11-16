@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../js/ol.js"></script>
+		<script src="../js/ol-ext.js"></script>
+		<script src="../js/FileSaver.min.js"></script>
+		<style>
+			html,
+			body,
+			#map {
+				height: 100%;
+				width: 100%;
+				margin: 0;
+				padding: 0;
+				border: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map"></div>
+	</body>
+	<script>
+		var map = new ol.Map({
+			target: 'map',
+			view: new ol.View({
+				center: [0, 0],
+				zoom: 2
+			})
+		});
+		var layer = new ol.layer.Tile({
+			title: "3857底图",
+			source: new ol.source.XYZ({
+				url: "http://t3.tianditu.com/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=6e9650f48c0a7f5212f2243a4af7f14b",
+				tileLoadFunction: function(imageTile, src) {
+					imageTile.getImage().src = src;
+				}
+			})
+		});
+		map.addLayer(layer);
+
+		layer.getSource().on('tileloadend', function(event) {
+			//event.preventDefault();
+			var canvas = document.createElement("canvas");
+			var context = canvas.getContext("2d");
+			canvas.width = 256;
+			canvas.height = 256;
+			
+			event.tile.image_.style.backgroundColor='#000';
+			
+			event.tile.image_.style.display='none';
+			//			var image = new Image();
+			//			image.src = event.tile.image_.src;
+			//			image.setAttribute("crossOrigin", 'Anonymous');
+			//			image.onload = function(eve) { //图片加载完，再draw 和 toDataURL
+			//				context.drawImage(eve.target, 0, 0, 256, 256);
+			//				
+			//				console.log(canvas.toDataURL("image/png"))
+			//				//event.tile.getImage().src = canvas.toDataURL("image/png");//canvas.toDataURL("image/png");
+			//			};
+			
+			
+//			context.drawImage(event.tile.getImage(), 0, 0, 256, 256);
+//			if(navigator.msSaveBlob) {
+//				navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
+//			} else {
+//				canvas.toBlob(function(blob) {
+//					saveAs(blob, 'map.png');
+//				});
+//			}
+			//context.drawImage(event.tile.getImage(), 0, 0, 256, 256);
+			//			var imgData = context.getImageData(0, 0, 256, 256);
+			//			var data = imgData.data;
+			//			console.log(data)
+
+		})
+	</script>
+
+</html>

@@ -1,0 +1,58 @@
+<!doctype>
+<html>
+
+	<head>
+		<style>
+			body {
+				background: #000000;
+				overflow: hidden;
+			}
+			
+			#BgImg {
+				position: absolute;
+				z-index: -100;
+			}
+			
+			#main {
+				width: 700px;
+				height: 700px;
+				color: #ffffff;
+				position: absolute;
+				z-index: 12;
+				left: 150px;
+				top: 30px;
+				border-radius: 1px;
+				box-shadow: -1px -1px 4px rgba(115, 115, 115, 0.6) inset, 1px 1px 4px rgba(115, 115, 115, 0.6) inset;
+			}
+			
+			#canvas {
+				z-index: 1;
+				position: absolute;
+			}
+		</style>
+		<script src="../js/jquery.min.js" type="text/javascript"></script>
+		<script src="../js/StackBlur.js" type="text/javascript"></script>
+	</head>
+
+	<body>
+		<img src='../img/tt.png' id='BgImg' />
+		<div id='main'>
+		</div>
+		<canvas id='canvas'></canvas>
+	</body>
+	<script>
+		Blur()
+		function Blur() {
+
+			stackBlurImage('BgImg', 'canvas', 32, 'main');
+		}
+//		window.οnlοad = function() {
+//
+//			var aa = document.getElementById("canvas");
+//			var bb = document.getElementById("main");
+//			change(bb, bb);
+//
+//		}
+	</script>
+
+</html>

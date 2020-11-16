@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>插值</title>
+		<link rel="stylesheet" href="https://js.arcgis.com/3.27/esri/css/esri.css">
+		<script src="https://js.arcgis.com/3.27/"></script>
+		<script src="../util/tdtlayers.js"></script>
+		<script src="../util/kriging.js"></script>
+		<style>
+			html,
+			body {
+				margin: 0;
+				padding: 0;
+				width: 100%;
+				height: 100%;
+				border: none;
+			}
+			
+			#map {
+				margin: 0;
+				padding: 0;
+				width: 49.5%;
+				height: 100%;
+				border: none;
+				float: left;
+				position: relative;
+			}
+			
+			#map2 {
+				margin: 0;
+				padding: 0;
+				width: 49.5%;
+				height: 100%;
+				border: none;
+				float: right;
+				position: relative;
+			}
+			
+			.aui-pageName {
+				position: absolute;
+				top: 1em;
+				left: 50%;
+				padding: 0.5em 0 0 1em;
+				border-radius: 10px;
+				z-index: 99;
+				margin-left: -25%;
+			}
+			
+			.aui-pageName div {
+				display: inline-table;
+				vertical-align: top;
+			}
+			
+			.aui-name p {
+				font-size: 1.8em;
+				/*font-weight: bolder;*/
+				font-family: "微软雅黑", "Microsoft YaHei", "黑体", Arial, Helvetica, sans-serif;
+				color: #6aaae7;
+				-webkit-text-shadow: 1px 1px 2px #001b4d;
+				-moz-text-shadow: 1px 1px 2px #001b4d;
+				text-shadow: 1px 1px 2px #001b4d;
+				padding-right: 0.5em;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map">
+			<div class="aui-pageName ">
+				<div class="aui-name ">
+					<p id="wtitle">反距离权重插值</p>
+				</div>
+			</div>
+		</div>
+
+		<div id="map2">
+			<div class="aui-pageName ">
+				<div class="aui-name ">
+					<p id="wtitle">克里金插值</p>
+				</div>
+			</div>
+		</div>
+		<script>
+			require(["esri/map", "esri/layers/GraphicsLayer", "esri/symbols/SimpleMarkerSymbol","esri/symbols/SimpleFillSymbol", "esri/symbols/SimpleLineSymbol", "esri/Color", "dojo/domReady!"], function(Map, GraphicsLayer, SimpleMarkerSymbol,SimpleFillSymbol, SimpleLineSymbol, Color) {
+				var map = new Map("map", {
+					logo: false,
+					nav: false,
+					slider: false,
+					center: [175.475, -37.87],
+					zoom: 8
+				});
+				var map2 = new Map("map2", {
+					logo: false,
+					nav: false,
+					slider: false,
+					center: [175.475, -37.87],
+					zoom: 8
+				});
+				defineClassesBeforInitMap();
+				var roadlayer = new TDTRoadLayer();
+				var annolayer = new TDTAnnoLayer();
+				map.addLayer(roadlayer);
+				map.addLayer(annolayer);
+				var roadlayer2 = new TDTRoadLayer();
+				var annolayer2 = new TDTAnnoLayer();
+				map2.addLayer(roadlayer2);
+				map2.addLayer(annolayer2);
+				var layer = new GraphicsLayer();
+				map.addLayer(layer);
+				var layer2 = new GraphicsLayer();
+				map2.addLayer(layer2);
+				
+				var pointlayer = new GraphicsLayer();
+				map.addLayer(pointlayer);
+				for(var i = 0; i < idwdatas.length; i++) {
+					var point = new esri.geometry.Point(idwdatas[i][1], idwdatas[i][0]);
+					var symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_SQUARE, 2,
+						new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+							new Color([255, 0, 0]), 0.0001),
+						new Color([0, 0, 0, 1]));
+					var graphic = new esri.Graphic(point, symbol);
+					pointlayer.add(graphic);
+				}
+				
+				map.on('extent-change',function(event){
+					map2.setExtent(event.extent);
+				})
+				
+				
+				
+				var result = idw();
+				var result2 = king();
+
+				render(result, layer);
+				render(result2, layer2);
+
+				function render(idwresult, resultlayer) {
+					var graphics = [];
+					for(var i = 0; i < idwresult.length; i++) {
+						var geometry = new esri.geometry.Polygon([
+							[idwresult[i].x, idwresult[i].y],
+							[idwresult[i].x + 0.0034632, idwresult[i].y],
+							[idwresult[i].x + 0.0034632, idwresult[i].y + 0.0034632],
+							[idwresult[i].x, idwresult[i].y + 0.0034632]
+						]);
+						var color = null;
+						if(idwresult[i].v < 100) {
+							color = [155, 255, 252, 1];
+						} else if(idwresult[i].v >= 100 && idwresult[i].v < 200) {
+							color = [0, 207, 254, 1];
+						} else if(idwresult[i].v >= 300 && idwresult[i].v < 400) {
+							color = [0, 156, 255, 1];
+						} else if(idwresult[i].v >= 400 && idwresult[i].v < 500) {
+							color = [6, 100, 255, 1];
+						} else if(idwresult[i].v >= 500 && idwresult[i].v < 600) {
+							color = [38, 159, 0, 1];
+						} else if(idwresult[i].v >= 600 && idwresult[i].v < 700) {
+							color = [36, 255, 0, 1];
+						} else if(idwresult[i].v >= 700 && idwresult[i].v < 800) {
+							color = [247, 255, 0, 1];
+						} else if(idwresult[i].v >= 800 && idwresult[i].v < 900) {
+							color = [253, 203, 10, 1];
+						} else if(idwresult[i].v >= 900 && idwresult[i].v < 1000) {
+							color = [243, 160, 6, 1];
+						} else if(idwresult[i].v >= 1000 && idwresult[i].v < 1100) {
+							color = [254, 1, 0, 1];
+						} else if(idwresult[i].v >= 1100 && idwresult[i].v < 1200) {
+							color = [203, 0, 10, 1];
+						} else if(idwresult[i].v >= 1200 && idwresult[i].v < 1300) {
+							color = [162, 0, 1, 1];
+						} else if(idwresult[i].v >= 1300 && idwresult[i].v < 1400) {
+							color = [150, 5, 170, 1];
+						} else if(idwresult[i].v >= 1400 && idwresult[i].v < 1500) {
+							color = [204, 3, 223, 1];
+						} else if(idwresult[i].v >= 1500) {
+							color = [243, 0, 248, 1];
+						}
+
+						var symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+							new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+								new Color([255, 255, 255, 0.000001]), 1), new Color(color)
+						);
+						var graphic = new esri.Graphic(geometry, symbol);
+						resultlayer.add(graphic);
+					}
+				}
+			})
+
+			function idw() {
+				//计算需要范围的结果的经纬度坐标
+
+				//需要插值的格点坐标。这个通过等分经纬度实现的，
+				var mydate = new Date()
+				console.log("开始idw插值" + mydate.getSeconds() + ":" + mydate.getMilliseconds().toString());
+				var idwresult = countgridlocal();
+				//返回idw计算结果
+				idwresult = idwcomputer(idwdatas, idwresult);
+				var newmydate = new Date()
+				console.log("结束idw插值" + newmydate.getSeconds() + ":" + newmydate.getMilliseconds().toString());
+				return idwresult;
+			}
+
+			function king() {
+				var mydate = new Date()
+				console.log("开始kring插值" + mydate.getSeconds() + ":" + mydate.getMilliseconds().toString());
+				var idwresult = countgridlocal();
+				//返回idw计算结果
+				for(var i = 0; i < idwresult.length; i++) {
+					idwresult[i].v = getKring(idwresult[i].x, idwresult[i].y);
+				}
+				var newmydate = new Date()
+				console.log(idwresult)
+				console.log("结束kring插值" + newmydate.getSeconds() + ":" + newmydate.getMilliseconds().toString());
+				return idwresult;
+			}
+			var idwdatas = [
+				[-37.8839, 175.3745188667, 571],
+				[-37.8869090667, 175.3657417333, 486],
+				[-37.8894207167, 175.4015351167, 807],
+				[-37.8927369333, 175.4087452333, 899],
+				[-37.90585105, 175.4453463833, 1273],
+				[-37.9064188833, 175.4441556833, 1258],
+				[-37.90584715, 175.4463564333, 1279],
+				[-37.9033391333, 175.4244005667, 1078],
+				[-37.9061991333, 175.4492620333, 1309],
+				[-37.9058955167, 175.4445613167, 1261],
+				[-37.88888045, 175.39146475, 734],
+				[-37.8950811333, 175.41079175, 928],
+				[-37.88909235, 175.3922956333, 740],
+				[-37.8889259667, 175.3938591667, 759],
+				[-37.8876576333, 175.3859563833, 687],
+				[-37.89027155, 175.3973178833, 778],
+				[-37.8864473667, 175.3806136833, 631],
+				[-37.9000262833, 175.4183242167, 1012],
+				[-37.90036495, 175.4189457, 1024],
+				[-37.9000976833, 175.4197312167, 1027],
+				[-37.90239975, 175.42371165, 1067],
+				[-37.9043379667, 175.42430325, 1080],
+				[-37.9026441, 175.4231055167, 1068],
+				[-37.8883536333, 175.3888573833, 718],
+				[-37.9029948833, 175.4237386167, 1070],
+				[-37.89824135, 175.4150421667, 982],
+				[-37.8976067833, 175.41510265, 983],
+				[-37.9023491333, 175.4225495, 1066],
+				[-37.8856157167, 175.3775632833, 608],
+				[-37.8963032667, 175.4132068, 951],
+				[-37.8922813667, 175.4073402333, 1 / 898],
+				[-37.88933345, 175.3956084333, 769],
+				[-37.8936148833, 175.4090577, 906],
+				[-37.8939398, 175.4094444833, 914],
+				[-37.8857355333, 175.3722297667, 542],
+				[-37.8931092167, 175.4083014, 898],
+				[-37.9008253167, 175.4198128, 1030],
+				[-37.9045052333, 175.4260735, 1100],
+				[-37.9053927167, 175.42822265, 1130],
+				[-37.90507935, 175.4313065, 1147],
+				[-37.9055749667, 175.4319092167, 1154],
+				[-37.9039034833, 175.4274736667, 1105],
+				[-37.9037633, 175.4261181833, 1093],
+				[-37.9038755, 175.42871045, 1105],
+				[-37.90369555, 175.4285285, 1105],
+				[-37.9056626, 175.4341078833, 1170],
+				[-37.9018736833, 175.438852, 1213],
+				[-37.9057596167, 175.4356650167, 1180],
+				[-37.9053502, 175.4361049333, 1185],
+				[-37.9053379167, 175.4366986167, 1195],
+				[-37.9058892333, 175.4381450333, 1204],
+				[-37.9060264167, 175.4400763167, 1220],
+				[-37.9056766833, 175.4412592, 1233],
+				[-37.9057312167, 175.4418380333, 1235],
+				[-37.9061575833, 175.4421068667, 1242],
+				[-37.9063946167, 175.4438004667, 1256],
+				[-37.8996027667, 175.43995055, 1215],
+				[-37.9006449667, 175.4395556833, 1215],
+				[-37.9009138167, 175.4394061333, 1215],
+				[-37.9034547, 175.4396315, 1219],
+				[-37.9055243, 175.4396033, 1221],
+				[-37.89952325, 175.4406619167, 1215],
+				[-37.90561525, 175.4404853167, 1225],
+				[-37.9045602333, 175.4477690333, 1285],
+				[-37.9040051667, 175.4388491833, 1213],
+				[-37.90588145, 175.4440349167, 1257],
+				[-37.90595915, 175.4389286833, 1212],
+				[-37.9059939667, 175.4398068833, 1218],
+				[-37.8868631833, 175.37991055, 630],
+				[-37.8878744833, 175.382179, 650],
+				[-37.8880764, 175.3839845667, 670],
+				[-37.8850457333, 175.3759821, 594],
+				[-37.88446045, 175.3762872667, 587],
+				[-37.8880782667, 175.38423415, 670],
+				[-37.8863533833, 175.3690698667, 515],
+				[-37.8861783167, 175.3710009833, 530],
+				[-37.885424, 175.3716677833, 541],
+				[-37.88524065, 175.3722141167, 547],
+				[-37.9022371333, 175.47991035, 10],
+				[-37.9020014833, 175.4799581667, 1],
+				[-37.9020824, 175.4802630167, 2],
+				[-37.9018589833, 175.4804760833, 3],
+				[-37.9018211333, 175.4806769667, 4],
+				[-37.9021543667, 175.4805538833, 5],
+				[-37.9022658, 175.4807579333, 6],
+				[-37.9024517833, 175.4806480667, 7],
+				[-37.9024251167, 175.48041985, 8],
+				[-37.9023317833, 175.4802119667, 9],
+				[-37.9321212167, 175.4555088, 39],
+				[-37.8956185167, 175.4719458667, 4],
+				[-37.8954566, 175.4728120333, 20],
+				[-37.8957231833, 175.4727906, 22],
+				[-37.8956085833, 175.4726702, 22],
+				[-37.8956460167, 175.4718485167, 2]
+			]
+
+			var variogram;
+			setValue();
+
+			function setValue() {
+				var t = [];
+				var x = [];
+				var y = [];
+				for(var i = 0; i < idwdatas.length; i++) {
+					t.push(idwdatas[i][2])
+					x.push(idwdatas[i][1])
+					y.push(idwdatas[i][0])
+				}
+				var model = "exponential";
+				var sigma2 = 0,
+					alpha = 100;
+				variogram = kriging.train(t, x, y, model, sigma2, alpha);
+			}
+
+			function getKring(xk, yk) {
+				var xnew, ynew;
+				var tpredicted = kriging.predict(xk, yk, variogram);
+				return tpredicted;
+			}
+
+			function countgridlocal() {
+				var minx = 175.3657417333;
+				var miny = -37.9321212167;
+				var grids = [];
+				for(var i = 0; i < 100; i++) {
+					for(var j = 0; j < 100; j++) {
+//						grids.push({
+//							x: minx + 0.0011501619999998525 * i,//0.0034632
+//							y: miny + 0.00048221216700000014 * j
+//						})
+						grids.push({
+							x: minx + 0.0034632 * i,//0.0034632
+							y: miny + 0.0034632 * j
+						})
+					}
+				}
+				return grids;
+			}
+			//idw算法
+			//输入[[x:0,y:0,v:0],[x:0,y:0,v:0],[x:0,y:0,v:0]]
+			function idwcomputer(datas, result) {
+				if(datas.lenght < 3) return result;
+				var m0 = datas.length;
+				var m1 = result.length;
+
+				//console.info(datas);
+
+				//距离列表
+				var r = [];
+
+				for(var i = 0; i < m1; i++) {
+					for(var j = 0; j < m0; j++) {
+						var tmpDis = Math.sqrt(Math.pow(result[i].x - datas[j][1], 2) + Math.pow(result[i].y - datas[j][0], 2));
+						r.push(tmpDis);
+					}
+				}
+
+				//插值函数
+
+				for(var i = 0; i < m1; i++) {
+					//查找重复
+					var ifFind = false;
+					for(var j = m0 * i; j < m0 * i + m0; j++) {
+						if(Math.abs(r[j]) < 0.0001) {
+							result[i].v = datas[j - m0 * i][2];
+							ifFind = true;
+							break;
+						}
+					}
+
+					if(ifFind) continue;
+
+					var numerator = 0;
+					var denominator = 0;
+
+					for(var j = m0 * i; j < m0 * i + m0; j++) {
+						numerator += datas[j - m0 * i][2] / (r[j] * r[j]);
+						denominator += 1 / (r[j] * r[j]);
+					}
+
+					result[i].v = numerator / denominator;
+				}
+				return result;
+
+			}
+		</script>
+	</body>
+
+</html>

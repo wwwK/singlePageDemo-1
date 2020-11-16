@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+		<title>radar</title>
+		<style>
+			canvas {
+				margin: 20px auto;
+				display: block;
+			}
+		</style>
+	</head>
+
+	<body>
+		<canvas id="can" width=300 height=300></canvas>
+
+		<script type="text/javascript">
+			var can = document.getElementById('can');
+			var ctx = can.getContext('2d');
+
+			var grd = ctx.createLinearGradient(175, 100, 300, 150);
+			grd.addColorStop(0, "rgba(0,255,0,0)");
+			grd.addColorStop(1, "rgba(0,255,0,1)");
+			ctx.fillStyle = grd;
+			ctx.beginPath();
+			ctx.moveTo(150, 150);
+			ctx.arc(150, 150, 150, -90 / 180 * Math.PI, 0 / 180 * Math.PI,false);
+			ctx.fill();
+		</script>
+	</body>
+
+</html>

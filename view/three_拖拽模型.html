@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<title>three.js webgl - OBJLoader + MTLLoader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+			
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display: block;
+			}
+			
+			#info a,
+			.button {
+				color: #f00;
+				font-weight: bold;
+				text-decoration: underline;
+				cursor: pointer
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<script src="../three.js/build/three.js"></script>
+		<script src="../three.js/examples/js/loaders/DDSLoader.js"></script>
+		<script src="../three.js/examples/js/loaders/MTLLoader.js"></script>
+		<script src="../three.js/examples/js/loaders/OBJLoader.js"></script>
+		<script src="../three.js/examples/js/Detector.js"></script>
+		<script src="../three.js/examples/js/libs/stats.min.js"></script>
+
+		<script src="../three.js/examples/js/controls/DragControls.js"></script>
+		<script src="../three.js/examples/js/controls/TrackballControls.js"></script>
+		<script src="../three.js/examples/js/controls/TransformControls.js"></script>
+
+		<script>
+			var scene, camera, renderer, controls, light;
+			var objects = [];
+
+			scene = new THREE.Scene();
+
+			camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+			camera.position.set(0, 400, 600);
+			camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			document.body.appendChild(renderer.domElement);
+
+			var ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
+			scene.add(ambientLight);
+
+			var pointLight = new THREE.PointLight(0xffffff, 0.8);
+			camera.add(pointLight);
+			scene.add(camera);
+
+			var helper = new THREE.GridHelper(1200, 50, 0xCD3700, 0x4A4A4A);
+			scene.add(helper); // 窗口变动触发的方法
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+			var onProgress = function(xhr) {
+				if(xhr.lengthComputable) {
+					var percentComplete = xhr.loaded / xhr.total * 100;
+					console.log(Math.round(percentComplete, 2) + '% downloaded');
+				}
+			};
+			var onError = function(xhr) {};
+			THREE.Loader.Handlers.add(/\.dds$/i, new THREE.DDSLoader());
+			var mtlLoader = new THREE.MTLLoader();
+			mtlLoader.setPath('../data/');
+			mtlLoader.load('电脑.mtl', function(materials) {
+				materials.preload();
+				var objLoader = new THREE.OBJLoader();
+				objLoader.setMaterials(materials);
+				objLoader.setPath('../data/');
+				objLoader.load('电脑.obj', function(object) {
+					console.log(object);
+
+					//					var model=object.children;
+					//					for(var i = 0; i < model.length; i++) {
+					//						model[i].geometry = new THREE.Geometry().fromBufferGeometry(model[i].geometry);
+					//					}
+					//
+					//					var mesh = new THREE.Geometry();
+					//					for(var i = 0; i < model.length; i++) {
+					//						THREE.GeometryUtils.merge(mesh, model[i]);
+					//					}
+					//
+					//					var material = new THREE.MeshLambertMaterial({　　
+					//						color: '0xff074f'
+					//					});
+					//
+					//					var result = new THREE.Mesh(mesh, material);
+
+					//创建材质数组和几何体数组
+					var meshArr = [];
+					var materialArr = [];
+
+					//遍历获取到所有网格的材质和几何体
+					
+					for(var i = 0; i < object.children.length; i++) {
+						if(object.children[i].isMesh) {
+							meshArr.push(object.children[i]);
+							materialArr.push(object.children[i].material);
+						}
+					}
+//					object.children.traverse(function(child) {
+//						if(child.isMesh) {
+//							meshArr.push(child);
+//							materialArr.push(child.material);
+//						}
+//					});
+
+					//融合几何体，并设置几何体的材质下标
+					var geometry = new THREE.Geometry();
+					for(var i = 0; i < meshArr.length; i++) {
+						meshArr[i].updateMatrix();
+						geometry.merge(new THREE.Geometry().fromBufferGeometry(meshArr[i].geometry), meshArr[i].matrix, i);
+					}
+
+					geometry.center();
+
+					//通过当前的合并的几何体和材质数组创建新的网格
+					var mesh = new THREE.Mesh(geometry, materialArr);
+
+					//添加到场景
+					mesh.rotation.x = -Math.PI / 2;
+
+					console.log(mesh);
+
+					scene.add(mesh);
+
+					//scene.add(result);
+					objects = [mesh]; // object.children;
+
+					initControls();
+					initDragControls();
+				}, onProgress, onError);
+			});
+
+			// 初始化轨迹球控件
+			function initControls() {
+				controls = new THREE.TrackballControls(camera, renderer.domElement);
+			}
+
+			// 添加拖拽控件
+			function initDragControls() {
+				// 添加平移控件
+				var transformControls = new THREE.TransformControls(camera, renderer.domElement);
+				scene.add(transformControls);
+
+				// 初始化拖拽控件
+				var dragControls = new THREE.DragControls(objects, camera, renderer.domElement);
+
+				// 鼠标略过
+				dragControls.addEventListener('hoveron', function(event) {
+					console.log(event.object);
+					transformControls.attach(event.object);
+				});
+				// 开始拖拽
+				dragControls.addEventListener('dragstart', function(event) {
+					controls.enabled = false;
+				});
+				// 拖拽结束
+				dragControls.addEventListener('dragend', function(event) {
+					controls.enabled = true;
+					console.log(1111)
+				});
+			}
+
+			// 初始化
+			function init() {
+				//				initScene();
+				//				initCamera();
+				//				initRenderer();
+				//				initContent();
+				//				initLight();
+				//				initControls();
+				//				initDragControls();
+				window.addEventListener('resize', onWindowResize, false);
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+				renderer.render(scene, camera);
+				if(controls) {
+					controls.update();
+				}
+
+			}
+
+			init();
+			animate();
+		</script>
+
+	</body>
+
+</html>

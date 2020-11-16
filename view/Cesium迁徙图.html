@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>迁徙图</title>
+
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<script type="text/javascript" src="../js/require.min.js" data-main="../js/main"></script>
+		<script type="text/javascript" src="../js/jquery.min.js"></script>
+		<style>
+			.cesium-viewer-navigationContainer {
+				display: none;
+			}
+			
+			html,
+			body,
+			#cesiumContainer {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				background-color: #000000;
+			}
+			/*隐藏超图水印*/
+			
+			.cesium-viewer-bottom {
+				display: none !important;
+			}
+			
+			.ol-popup {
+				position: absolute;
+				background-color: white;
+				-webkit-filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+				filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+				padding: 24px 15px 15px 15px;
+				border-radius: 0px;
+				border: 1px solid #cccccc;
+				min-width: 320px;
+				font-size: 18px;
+				z-index: 100;
+				display: none;
+				background: rgba(0, 136, 222, .05);
+				padding: 15px 5px;
+				box-shadow: inset 0px 0px 46px rgba(0, 90, 201, .35);
+				border: 1px solid rgba(0, 90, 201, .34);
+				color: #fff;
+			}
+			
+			.ol-popup p {
+				font-size: 18px !important;
+				margin: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="cesiumContainer">
+		</div>
+		<div id="popup" class="ol-popup">
+			<div id="popup-content"></div>
+		</div>
+		<script>
+			var enumData = [{
+				Name: '北京',
+				X: 116.24,
+				Y: 39.55
+			}, {
+				Name: '乌鲁木齐 ',
+				X: 87.36,
+				Y: 43.45
+			}, {
+				Name: '上海',
+				X: 121.29,
+				Y: 31.14
+			}, {
+				Name: '呼和浩特',
+				X: 111.41,
+				Y: 40.48
+			}, {
+				Name: '海口',
+				X: 110.20,
+				Y: 20.02
+			}];
+
+			function formateData(data) {
+				var features = [];
+				for(var i = 0; i < data.length; i++) {
+					features.push({
+						name: data[i].Name,
+						point: [parseFloat(data[i].X), parseFloat(data[i].Y)]
+					})
+				}
+				return features;
+			}
+			var viewer;
+			var modelpath = []; //记录模型路径
+			function onload(Cesium) {
+				var centerpoint = {
+					name: '成勘院',
+					point: [104, 30]
+				};
+				var targetpoints = formateData(enumData);
+				initMap(centerpoint, targetpoints);
+				var animationObj = {
+					stepsRange: {
+						start: 0,
+						end: 300 //决定线上点数量
+					},
+					trails: 10,
+					duration: 30 //决定速度，越小越快
+				};
+				var _range = animationObj.stepsRange.end - animationObj.stepsRange.start;
+
+				function initMap(centerpoint, targetpoints) {
+					//初始化viewer部件
+					viewer = new Cesium.Viewer('cesiumContainer', {
+						//添加夜景地图
+						imageryProvider: new Cesium.SingleTileImageryProvider({
+							url: '../img/base.png'
+						}),
+						infoBox: false,
+						selectionIndicator: false,
+
+					});
+
+					var layers = viewer.scene.globe.imageryLayers;
+					layers.addImageryProvider(new Cesium.SingleTileImageryProvider({
+						url: '../img/black.png'
+					}));
+					var scene = viewer.scene;
+
+					addTravelLines(centerpoint, targetpoints); //添加迁徙图
+
+					roate();
+
+				}
+
+				function addTravelLines(centerpoint, targetpoints) {
+
+					viewer.entities.add({
+						position: Cesium.Cartesian3.fromDegrees(centerpoint.point[0], centerpoint.point[1], 100),
+						name: centerpoint.name,
+						ellipse: {
+							semiMinorAxis: 100000.0,
+							semiMajorAxis: 100000.0,
+							material: Cesium.Color.fromCssColorString('#F77C05')
+						}
+					});
+					viewer.entities.add({
+						position: Cesium.Cartesian3.fromDegrees(centerpoint.point[0], centerpoint.point[1], 0),
+						name: centerpoint.name,
+						ellipse: {
+							semiMinorAxis: 150000.0,
+							semiMajorAxis: 150000.0,
+							material: Cesium.Color.fromCssColorString('#773C02')
+						},
+					});
+					for(var i = 0; i < targetpoints.length; i++) {
+						var origin = centerpoint.point;
+						var destination = targetpoints[i].point;
+						var dis = getGreatCircleDistance(origin[1], origin[0], destination[1], destination[0]);
+						var pntArray = addBezier(origin, destination, dis / 7, 300);
+						var color = Cesium.Color.fromCssColorString('#0f89ff');
+						modelpath.push(formateCartesian3(pntArray));
+						var entity = new Cesium.Entity();
+						entity.polyline = {
+							positions: pntArray,
+							width: 7.1,
+							material: new Cesium.PolylineOutlineMaterialProperty({
+								color: Cesium.Color.fromCssColorString('#0068F2'),
+								outlineWidth: 7,
+								outlineColor: Cesium.Color.fromCssColorString('#188eff').withAlpha(0.3)
+							})
+						};
+
+						viewer.entities.add(entity);
+
+						viewer.entities.add({
+							position: Cesium.Cartesian3.fromDegrees(destination[0], destination[1], 10000),
+							name: targetpoints[i].name,
+							ellipse: {
+								semiMinorAxis: 100000.0,
+								semiMajorAxis: 100000.0,
+								material: Cesium.Color.fromCssColorString('#00D1A8')
+							},
+						});
+						viewer.entities.add({
+							position: Cesium.Cartesian3.fromDegrees(destination[0], destination[1], 10000),
+							name: targetpoints[i].name,
+							ellipse: {
+								semiMinorAxis: 150000.0,
+								semiMajorAxis: 150000.0,
+								material: Cesium.Color.fromCssColorString('#00716D').withAlpha(0.5)
+							},
+						});
+					}
+
+					addMouseMove();
+					addModelLayer();
+				}
+
+				//添加鼠标移动事件
+				function addMouseMove() {
+					var labelEntity = viewer.entities.add({
+						label: {
+							show: false,
+							fillColor: Cesium.Color.fromCssColorString('#FFF'),
+							showBackground: false,
+							//font: '20px monospace',
+							horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(15, 0)
+						}
+					});
+					var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+					handler.setInputAction(function(movement) {
+						var pickedObject = viewer.scene.pick(movement.endPosition);
+						if(Cesium.defined(pickedObject) && pickedObject.id._name) {
+							var cartesian = viewer.scene.pickPosition(movement.endPosition);
+							if(Cesium.defined(cartesian)) {
+								var screenpoint = Cesium.SceneTransforms.wgs84ToWindowCoordinates(viewer.scene, cartesian); //世界坐标转屏幕坐标
+
+								$('.ol-popup').show();
+								var content = document.getElementById('popup-content');
+								content.innerHTML = '<p style="line-height: 24px;">' + pickedObject.id._name + '</p>';
+								$('.ol-popup').css('top', screenpoint.y);
+								$('.ol-popup').css('left', screenpoint.x);
+							} else {
+								$('.ol-popup').hide();
+							}
+						} else {
+							$('.ol-popup').hide();
+						}
+					}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+				}
+
+				function roate() {
+					setTimeout(function() {
+						viewer.scene.camera.rotateLeft(Cesium.Math.toRadians(0.1)); //rotateRight(angle)
+						roate();
+					}, 100);
+				}
+
+				function formateCartesian3(coors) {
+					var cartesianArray = [];
+					for(var i = 0; i < coors.length; i++) {
+						var point = Cesium.Ellipsoid.WGS84.cartesianToCartographic(coors[i]);
+						var state = new Cesium.DynamicObjectState({
+							longitude: Cesium.Math.toDegrees(point.longitude),
+							latitude: Cesium.Math.toDegrees(point.latitude),
+							altitude: point.height,
+							scale: new Cesium.Cartesian3(100, 100, 100)
+						});
+						cartesianArray.push(state);
+					}
+					return cartesianArray;
+				}
+
+				function addModelLayer() {
+					for(var i = 0; i < modelpath.length; i++) {
+						for(var j = 0; j < modelpath[i].length; j++) {
+							var entity = viewer.entities.add({
+								position: Cesium.Cartesian3.fromDegrees(modelpath[i][j].longitude, modelpath[i][j].latitude, modelpath[i][j].altitude),
+								nameID: j,
+								billboard: {
+									image: '../img/cir.png',
+									width: 12,
+									height: 12,
+									color: Cesium.Color.fromCssColorString('#FFF')
+								}
+							});
+							entity.isAvailable = function(obj) {
+								return function(currentTime) {
+									if(!Cesium.defined(currentTime)) {
+										throw new Cesium.DeveloperError('time is required.');
+									}
+									var nMS = Cesium.JulianDate.toDate(currentTime).getTime() / animationObj.duration;
+									var time = (nMS % _range + animationObj.stepsRange.start);
+
+									var trails = trails || 10;
+									if(time && obj.nameID > time - trails && obj.nameID < time) {
+										obj.billboard.color._value.alpha = 0.8 * (obj.nameID - time + trails) / trails;
+										return true;
+									} else {
+										return false;
+									}
+								}
+							}(entity);
+						}
+					}
+				}
+
+				function addBezier(pointA, pointB, height, num) {
+					var earth = Cesium.Ellipsoid.WGS84;
+					var startPoint = earth.cartographicToCartesian(Cesium.Cartographic.fromDegrees(parseFloat(pointA[0]), parseFloat(pointA[1]), 0.0));
+					var endPoint = earth.cartographicToCartesian(Cesium.Cartographic.fromDegrees(parseFloat(pointB[0]), parseFloat(pointB[1]), 0.0));
+					var addCartesian = startPoint.clone();
+					Cesium.Cartesian3.add(startPoint, endPoint, addCartesian);
+					var midpointCartesian = addCartesian.clone();
+					Cesium.Cartesian3.divideByScalar(addCartesian, 2, midpointCartesian);
+					earth.scaleToGeodeticSurface(midpointCartesian);
+					var midpointCartographic = earth.cartesianToCartographic(midpointCartesian);
+					midpointCartographic.height = height;
+					midpointCartesian = earth.cartographicToCartesian(midpointCartographic);
+					var spline = new Cesium.CatmullRomSpline({
+						times: [0.0, 0.5, 1.0],
+						points: [
+							startPoint,
+							midpointCartesian,
+							endPoint
+						],
+					});
+					var polylinePoints = [];
+					for(var ii = 0; ii < num; ++ii) {
+						polylinePoints.push(spline.evaluate(ii / num));
+					}
+					return polylinePoints;
+				}
+
+				function getRad(d) {
+					return d * Math.PI / 180.0;
+				}
+
+				function getGreatCircleDistance(lat1, lng1, lat2, lng2) {
+					var radLat1 = getRad(lat1);
+					var radLat2 = getRad(lat2);
+
+					var a = radLat1 - radLat2;
+					var b = getRad(lng1) - getRad(lng2);
+
+					var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+					s = s * 6378137;
+					s = Math.round(s * 10000) / 10000.0;
+					return s;
+				}
+			}
+		</script>
+	</body>
+
+</html>

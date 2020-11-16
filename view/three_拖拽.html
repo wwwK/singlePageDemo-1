@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<title>拖拽控件</title>
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+			}
+		</style>
+		<script src="https://threejs.org/build/three.js"></script>
+
+		<script src="../three.js/examples/js/controls/TrackballControls.js"></script>
+		<!--拖拽控件-->
+		<script src="../three.js/examples/js/controls/DragControls.js"></script>
+		<!--可视化平移控件-->
+		<script src="../three.js/examples/js/controls/TransformControls.js"></script>
+
+		<script type="text/javascript" src="../three.js/examples/js/controls/OrbitControls.js"></script>
+
+		<script type="x-shader/x-vertex" id="vertexshader">
+			attribute float size; 
+			varying vec3 vColor; 
+			void main() { 
+				vColor = color; 
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 ); 
+				gl_PointSize = size * ( 1000.0 / -mvPosition.z ); 
+				gl_Position = projectionMatrix * mvPosition; 
+			}
+		</script>
+
+		<script type="x-shader/x-fragment" id="fragmentshader">
+			uniform sampler2D pointTexture; 
+			varying vec3 vColor; 
+			void main() { 
+				gl_FragColor = vec4( vColor, 1.0 ); 
+				gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord ); 
+			}
+		</script>
+	</head>
+
+	<body>
+		<script>
+			var scene, camera, renderer, controls, light;
+
+			//用于轨道控制器
+			var orbitControls, clock, delta;
+
+			// 场景
+			function initScene() {
+				scene = new THREE.Scene();
+			}
+
+			// 相机
+			function initCamera() {
+				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+				camera.position.set(0, 400, 600);
+				camera.lookAt(new THREE.Vector3(0, 0, 0));
+			}
+
+			// 渲染器
+			function initRenderer() {
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				document.body.appendChild(renderer.domElement);
+
+				//添加轨道控制器
+				//新建一个轨道控制器
+				//				orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+				//				orbitControls.target = new THREE.Vector3(0, 0, 0); //控制焦点
+				//				orbitControls.autoRotate = false; //将自动旋转关闭
+				//				clock = new THREE.Clock(); //用于更新轨道控制器
+			}
+
+			// 初始化模型
+			function initContent() {
+				var helper = new THREE.GridHelper(1200, 50, 0xCD3700, 0x4A4A4A);
+				scene.add(helper);
+
+				createCube(100, 150, 20, undefined, 75, undefined)
+				createCube(100, 30, 100, 200, 15, 200)
+				createCube(100, 20, 100, 200, 65, 200)
+				createCube(100, 20, 100, 200, 115, 200)
+				createCube(100, 30, 100, 200, 155, 200)
+
+				createTube({
+					x: 0,
+					y: 100,
+					z: 50
+				}, {
+					x: 150,
+					y: 200,
+					z: 200
+				}, 2)
+
+				createBall(2, 50, 50, 0, 100, 50, 'start');
+				createBall(2, 50, 50, 150, 200, 200, 'end');
+
+				createLight();
+			}
+			var positions = [];
+			var colors = [];
+			var sizes = [];
+			var lightgeometry = new THREE.BufferGeometry();
+
+			function createLight() {
+				colors = [0, 255, 0];
+				positions = [150, 200, 200];
+				sizes = [20];
+				lightgeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+				lightgeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+				lightgeometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1).setUsage(THREE.DynamicDrawUsage));
+
+				var uniforms = {
+					pointTexture: {
+						value: new THREE.TextureLoader().load("https://threejs.org/examples/textures/sprites/spark1.png")
+					}
+				};
+				var shaderMaterial = new THREE.ShaderMaterial({
+					uniforms: uniforms,
+					vertexShader: document.getElementById('vertexshader').textContent,
+					fragmentShader: document.getElementById('fragmentshader').textContent,
+					blending: THREE.AdditiveBlending,
+					depthTest: true,
+					transparent: true,
+					vertexColors: true
+				});
+
+				var particleSystem = new THREE.Points(lightgeometry, shaderMaterial);
+				//particleSystem.attributes = {};
+				//particleSystem.attributes.remove = false;
+				scene.add(particleSystem);
+			}
+
+			var tubeMesh = null;
+
+			function createTube(start, end, radius) {
+				return;
+				var center_x = (start.x + end.x) / 2;
+				var center_y = (start.y + end.y) / 6;
+				var center_z = (start.z + end.z) / 2;
+				var curve = new THREE.SplineCurve3([
+					new THREE.Vector3(start.x, start.y, start.z),
+					new THREE.Vector3(center_x, center_y, center_z),
+					new THREE.Vector3(end.x, end.y, end.z)
+				]);
+				var geometry = new THREE.Geometry();
+				geometry.vertices = curve.getPoints(50);
+				var material = new THREE.MeshBasicMaterial({
+					color: 0xff0000
+				});
+				// path:路径   40：沿着轨迹细分数  2：管道半径   25：管道截面圆细分数
+
+				var geometry = new THREE.TubeGeometry(curve, 40, radius, 25);
+				if(tubeMesh) {
+					tubeMesh.geometry = geometry;
+				} else {
+					tubeMesh = new THREE.Mesh(geometry, material);
+					tubeMesh.attributes = {};
+					tubeMesh.attributes.remove = false;
+					tubeMesh.attributes.type = 'tube';
+					scene.add(tubeMesh);
+				}
+				tubeMesh.attributes.start = start;
+				tubeMesh.attributes.end = end;
+			}
+
+			function createBall(radius, segmentsWidth, segmentsHeight, x, y, z, type) {
+				var cube = new THREE.Mesh(new THREE.SphereGeometry(radius, segmentsWidth, segmentsHeight),
+					new THREE.MeshBasicMaterial({
+						color: 0xffffff,
+						wireframe: true
+					})
+				)
+				cube.position.x = x;
+				cube.position.y = y;
+				cube.position.z = z;
+				cube.attributes = {};
+				cube.attributes.remove = true;
+				cube.attributes.type = type;
+				scene.add(cube)
+			}
+
+			function createCube(width, height, depth, x, y, z) {
+				var cubeGeometry = new THREE.BoxGeometry(width, height, depth);
+				var cubeMaterial = new THREE.MeshLambertMaterial({
+					color: 0xFFFFFF
+				});
+				var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+				if(x != undefined) cube.position.x = x;
+				if(y != undefined) cube.position.y = y;
+				if(z != undefined) cube.position.z = z;
+				cube.attributes = {};
+				cube.attributes.remove = false;
+				scene.add(cube);
+			} // 窗口变动触发的方法
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+			// 初始化轨迹球控件
+			function initControls() {
+				controls = new THREE.TrackballControls(camera, renderer.domElement);
+			}
+
+			// 添加拖拽控件
+			function initDragControls() {
+				// 添加平移控件
+				var transformControls = new THREE.TransformControls(camera, renderer.domElement);
+				scene.add(transformControls);
+
+				// 过滤不是 Mesh 的物体,例如辅助网格
+				var objects = [];
+				for(let i = 0; i < scene.children.length; i++) {
+					if(scene.children[i].isMesh && scene.children[i].attributes.remove) {
+						objects.push(scene.children[i]);
+					}
+				}
+				// 初始化拖拽控件
+				var dragControls = new THREE.DragControls(objects, camera, renderer.domElement);
+
+				// 鼠标略过
+				dragControls.addEventListener('hoveron', function(event) {
+					transformControls.attach(event.object);
+				});
+				// 开始拖拽
+				dragControls.addEventListener('dragstart', function(event) {
+					controls.enabled = false;
+				});
+
+				dragControls.addEventListener('drag', function(event) {
+
+				});
+
+				// 拖拽结束
+				dragControls.addEventListener('dragend', function(event) {
+					controls.enabled = true;
+					console.log(1111)
+					//					if(event.object.position.y < 0) {
+					//						event.object.position.y = 0;
+					//					}
+
+					var _objects = [];
+					for(let i = 0; i < scene.children.length; i++) {
+						if(scene.children[i].isMesh && scene.children[i].attributes.type == 'tube') {
+							_objects.push(scene.children[i]);
+						}
+					}
+
+					for(let i = 0; i < _objects.length; i++) {
+						if(_objects[i].isMesh && _objects[i].attributes.type == 'tube') {
+
+							var start = _objects[i].attributes.start;
+							var end = _objects[i].attributes.end;
+
+							if(event.object.attributes.type == 'start') {
+								createTube(event.object.position, end, 2)
+							} else if(event.object.attributes.type == 'end') {
+								createTube(start, event.object.position, 2)
+							}
+						}
+					}
+				});
+			}
+
+			// 初始化灯光
+			function initLight() {
+				light = new THREE.SpotLight(0xffffff);
+				light.position.set(-300, 600, -400);
+				scene.add(light);
+				scene.add(new THREE.AmbientLight(0x5C5C5C));
+			}
+
+			// 初始化
+			function init() {
+				initScene();
+				initCamera();
+				initRenderer();
+				initContent();
+				initLight();
+				initControls();
+				initDragControls();
+				window.addEventListener('resize', onWindowResize, false);
+			}
+
+			function animate() {
+				//				delta = clock.getDelta();
+				//				orbitControls.update(delta);
+				requestAnimationFrame(animate);
+
+				var time = Date.now() * 0.005;
+				var sizes = lightgeometry.attributes.size.array;
+				sizes[0] = 20 * (1 + Math.sin(0.1 * 0 + time));
+				lightgeometry.attributes.size.needsUpdate = true;
+
+				renderer.render(scene, camera);
+				controls.update();
+			}
+
+			init();
+			animate();
+		</script>
+	</body>
+
+</html>

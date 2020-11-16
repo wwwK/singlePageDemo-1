@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link rel="stylesheet" href="../layui/css/layui.css?v=20190411" />
+		<script src="../js/jquery.min.js?v=20190411"></script>
+		<script src="../layui/layui.js?v=20190411"></script>
+	</head>
+
+	<body>
+		<form class="layui-form">
+			<input name="open_time" type="text" class="layui-input" id="open_time">
+
+			<input name="open_time1" type="text" class="layui-input" id="open_time1">
+		</form>
+	</body>
+	<script>
+		$(function() {
+
+			var enableTime = ['2019-06-21', '2019-06-03', '2019-06-12', '2019-06-28', '2019-06-23', '2019-06-01', '2019-06-09', '2019-06-15'];
+
+			layui.use(['form', 'laydate', 'layer', 'element', 'table', 'laypage', 'upload'], function() {
+				layerLayer = layui.layer;
+				layerDate = layui.laydate;
+				layerForm = layui.form;
+				layerElement = layui.element;
+				layerTable = layui.table;
+				layerPage = layui.laypage;
+				layerUpload = layui.upload;
+
+				layerDate.render({
+					elem: '#open_time', //指定元素
+					type: 'date',
+					format: 'yyyy-MM-dd', //可任意组合
+					ready: function(date) {
+						disableControl(enableTime);
+					},
+					change: function(value, date, endDate) {
+						disableControl(enableTime);
+					},
+					done: function(date) {
+
+					}
+				});
+
+				layerDate.render({
+					elem: '#open_time1', //指定元素
+					type: 'date',
+					format: 'yyyy-MM-dd', //可任意组合
+					//					ready: function(date) {
+					//						disableControl('layui-laydate1', enableTime);
+					//					},
+					//					change: function(value, date, endDate) {
+					//						disableControl('layui-laydate1', enableTime);
+					//					},
+					//					done: function(date) {
+					//
+					//					}
+				});
+			})
+
+			function isCanReply(value, times) {
+				var date = getFullTime(value);
+				for(var i = 0; i < times.length; i++) {
+					var item = getFullTime(times[i]['time']);
+					if(date == item) return times[i]['canReply'];
+				}
+			}
+
+			function dateInEnum(value, times) {
+				var date = getFullTime(value);
+				for(var i = 0; i < times.length; i++) {
+					var item = getFullTime(times[i]['time']);
+					if(date == item) return true;
+				}
+				return false;
+			}
+
+			function disableControl(times) {
+				var tds = $('.layui-laydate tbody td');
+				for(var i = 0; i < tds.length; i++) {
+					var item = $($('.layui-laydate tbody td')[i]).attr('lay-ymd');
+					var isable = dateInEnum(item, times);
+					if(!isable) {
+						$($('.layui-laydate tbody td')[i]).addClass('laydate-disabled')
+					} else {
+						$($('.layui-laydate tbody td')[i]).removeClass('laydate-disabled')
+					}
+				}
+			}
+
+			function getFullTime(timestr) {
+				var date = timestr ? new Date(timestr) : new Date();
+				var seperator1 = "-";
+				var year = date.getFullYear();
+				var month = date.getMonth() + 1;
+				var strDate = date.getDate();
+				var hour = date.getHours();
+				var minutes = date.getMinutes();
+				if(month >= 1 && month <= 9) {
+					month = "0" + month;
+				}
+				if(strDate >= 0 && strDate <= 9) {
+					strDate = "0" + strDate;
+				}
+				if(hour >= 0 && hour <= 9) {
+					hour = "0" + hour;
+				}
+				if(minutes >= 0 && minutes <= 9) {
+					minutes = "0" + minutes;
+				}
+				var currentdate = year + seperator1 + month + seperator1 + strDate;
+				return currentdate;
+			}
+		});
+	</script>
+
+</html>

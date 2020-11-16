@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<!--<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">-->
+		<title>Relationship Renderer</title>
+
+		<!--<link rel="stylesheet" href="http://223.86.3.47:38080/arcgis_js_api/library/3.25/3.25/esri/css/esri.css">-->
+		<!--<link rel="stylesheet" href="http://223.86.3.47:38080/arcgis_js_api/library/3.25/3.25/dijit/themes/claro/claro.css">-->
+
+		<!--<link rel="stylesheet" href="http://223.86.3.47:38080/arcgis_js_api/library/3.25/3.25/esri/css/esri.css">
+		<script src="http://223.86.3.47:38080/arcgis_js_api/library/3.25/3.25/init.js"></script>-->
+
+		<!--<link rel="stylesheet" href="https://js.arcgis.com/3.25/esri/css/esri.css">
+		<script src="https://js.arcgis.com/3.25/"></script>-->
+
+		<link rel="stylesheet" href="../arcgis_js_api/esri/css/esri.css">
+		<script src="../arcgis_js_api/init.js"></script>
+
+		<style>
+			html,
+			body,
+			#map {
+				height: 100%;
+				width: 100%;
+				margin: 0;
+				padding: 0;
+				border: none;
+			}
+		</style>
+
+	</head>
+
+	<body>
+		<div id="map"></div>
+	</body>
+	<script>
+//		var _dojo_inited = false;
+//		dojo.require("dojo.domReady!");
+//		dojo.require("esri.Color");
+//		dojo.require("esri.SpatialReference");
+//		dojo.require("esri.map");
+//		dojo.require("esri.geometry.Circle");
+//		dojo.require("esri.geometry.Extent");
+//		dojo.require("esri.geometry.Point");
+//		dojo.require("esri.geometry.webMercatorUtils");
+//		dojo.require("esri.graphic");
+//		dojo.require("esri.layers.FeatureLayer");
+//		dojo.require("esri.layers.GraphicsLayer");
+//		dojo.require("esri.layers.ArcGISTiledMapServiceLayer");
+//		dojo.require("esri.layers.ArcGISDynamicMapServiceLayer");
+//
+//		dojo.require("esri.renderers.ClassBreaksRenderer");
+//		dojo.require("esri.renderers.HeatmapRenderer");
+//		dojo.require("esri.symbols.PictureMarkerSymbol");
+//		dojo.require("esri.symbols.SimpleFillSymbol");
+//		dojo.require("esri.symbols.SimpleLineSymbol");
+//		dojo.require("esri.symbols.SimpleMarkerSymbol");
+//		dojo.require("esri.tasks.QueryTask");
+//		dojo.require("extras.ClusterLayer");
+//		dojo.require("src.EchartsLayer");
+//		dojo.require("esri.toolbars.draw");
+//		dojo.require("esri.toolbars.edit");
+//		dojo.require("esri.graphicsUtils");
+//		dojo.require("esri.geometry.jsonUtils");
+//		dojo.require("esri.tasks.IdentifyTask");
+//		dojo.require("esri.tasks.IdentifyParameters");
+//		dojo.require("esri.geometry.geometryEngine");
+		//		/////////////////////
+
+		/////////////////////公共方法START
+		//创建底图，并生成一个临时图层
+		var _gisapi_dynamic = null;
+		var _gisapi_map;
+		var _gisapi_spatialReference = {
+			wkid: 4326
+		};
+		var _gisapi_initExtent = {
+			xmin: 116.84760,
+			ymin: 23.57,
+			xmax: 119.85651,
+			ymax: 28.316207,
+			spatialReference: _gisapi_spatialReference
+		};
+		var _gisapi_overlay = null;
+		var _gisapi_myChart;
+		var _gisapi_layerTemporaryPQY = null; //点数据区域渲染图层
+		var _gisapi_layerTemporaryRanks = null; //划片图层
+		var _gisapi_layerTemporaryRanksNone = null; //划片隐藏图层
+		var _gisapi_layerTemporaryPoint = null; //点数据图层
+		var _gisapi_layerTemporaryPointHighlight = null; //点数据高亮图层
+		var _gisapi_layerTemporaryRanksHighlight = null; //划片高亮图层
+		var _gisapi_layerMaskTemp = null; //解决白边图层
+		var _gisapi_layerTemp = null; //解决白边图层
+		var _gisapi_mapSearchElementLayer = null; //地图要素搜索定位图层
+		var _gisapi_layerQueryMap = null;
+		var _gisapi_loadLayer = null; //辅助图层
+		var _gisapi_maphFeatureLayer = null; //辅助热力图
+		var _gisapi_maphFeatureLayerSpecial = null; //special热力图
+		var _gisapi_hFeatureLayerByData = null; //参数是数据的热力图
+		var _gisapi_FZClusterLayer = null; //辅助聚合图
+		var _gisapi_maplayerDefinition;
+		var _gisapi_mapfeatureCollection;
+		var _gisapi_textlayer = null; //标注图层
+		var _gisapi_layers = []; //要显示的 其他图层数组
+		var _gisapi_number = 0; //判断地图加载的次数
+		var _gisapi_layerNumber = 0;
+		var _gisapi_clusterLayer = null; //聚合图层
+		var _gisapi_QueryIdShowM = "0";
+
+		//<!--yangtao-->
+		var _gisapi_fixedLayer = null; //固定图层（多个图层融合）
+		var _gisapi_searchLayer = null; //搜索查询图层
+		var _gisapi_gridLayer = null; //网格绘制图层
+		var _gisapi_geoDecodeObj = {
+			status: false,
+			callback: null
+		}; //地理解码
+		var _gisapi_zoom = 0; //地图层级
+		//定义一些常量
+		var x_PI = 3.14159265358979324 * 3000.0 / 180.0;
+		var PI = 3.1415926535897932384626;
+		//<!--yangtao-->
+		//var _gisapi_mapurl = null;
+		//var _gisapi_QueryMapurl = null;
+		var _gisapi_TwoArray = new Array();
+		var _gisapi_pointsArray = new Array(); //点数据显示接口回调函数与唯一标识数组
+		var _gisapi_callbak = {};
+		var _gisapi_var = {};
+		var _gisapi_params = {};
+
+		function _gisapi_addMap() {
+			if(_gisapi_number) return;
+
+			_gisapi_number++;
+			_gisapi_spatialReference = new esri.SpatialReference({
+				wkid: 4326
+			});
+
+			console.log(_gisapi_spatialReference);
+			_gisapi_map = new esri.Map("map", {
+				extent: new esri.geometry.Extent(_gisapi_initExtent),
+				logo: false,
+				slider: true,
+				zoom: 8,
+				basemap: "topo"
+			});
+
+			var url = "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Mexico_demographics/FeatureServer/0";
+
+			// Create new feature layer pointing to service with educational
+			// attainment data by city and assigns it a PopupTemplate
+
+			var layer = new esri.layers.FeatureLayer(url);
+
+			// Add the layer to the map
+			_gisapi_map.addLayer(layer);
+
+		}
+
+		setTimeout(() => {
+			_gisapi_addMap();
+		}, 5000)
+	</script>
+
+</html>

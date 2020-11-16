@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style>
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+			
+			body {
+				background: orange;
+			}
+		</style>
+		<script src="../js/jquery.min.js">
+		</script>
+	</head>
+
+	<body>
+		<button type="button" id="btn">全屏</button>
+	</body>
+	<script>
+		$(function() {
+			$('#btn').click(function() {
+				var element = document.documentElement;
+				if(element.requestFullscreen) {
+					element.requestFullscreen();
+				} else if(element.msRequestFullscreen) {
+					element.msRequestFullscreen();
+				} else if(element.mozRequestFullScreen) {
+					element.mozRequestFullScreen();
+				} else if(element.webkitRequestFullscreen) {
+					element.webkitRequestFullscreen();
+				}
+			})
+			var obj = document.getElementById('btn');
+			if(document.all) {
+				obj.click();
+			} else {
+				var e = document.createEvent('MouseEvents');
+				e.initEvent('click', true, true);
+				obj.dispatchEvent(e);
+			}
+		})
+	</script>
+
+</html>

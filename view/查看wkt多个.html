@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../js/ol.js"></script>
+		<script src="../js/jquery.min.js"></script>
+		<style>
+			html,
+			body,
+			.map {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="map" id="map">
+
+		</div>
+		<script>
+			let map = new ol.Map({
+				target: 'map',
+				interactions: ol.interaction.defaults({
+					altShiftDragRotate: false,
+					pinchRotate: false
+				}),
+				view: new ol.View({
+					center: ol.proj.transform([104, 30], 'EPSG:4326', 'EPSG:3857'),
+					zoom: 8,
+					maxZoom: 18,
+					minZoom: 2
+				})
+			});
+
+			let roadLayer = new ol.layer.Tile({
+				title: "3857底图",
+				source: new ol.source.XYZ({
+					tileUrlFunction: function(tileCoord) {
+						let oo = "00000000";
+						let zz = tileCoord[0];
+						if(zz < 10) {
+							zz = '0' + zz;
+						}
+						let z = "L" + zz;
+
+						let xx = tileCoord[1].toString(16);
+						let x = "C" + oo.substring(0, 8 - xx.length) + xx;
+						let yy = (-tileCoord[2] - 1).toString(16); //注意此处，计算方式变了
+						let y = "R" + oo.substring(0, 8 - yy.length) + yy;
+						return 'http://223.86.3.47:28080/api/Handler/Utils.ashx?method=convertImg&x=' + z + '&y=' + y + '&z=' + x
+					},
+					projection: 'EPSG:3857'
+				})
+			});
+			map.addLayer(roadLayer);
+
+			let rangeLyaer = new ol.layer.Vector({
+				source: new ol.source.Vector({
+					features: []
+				}),
+				style: new ol.style.Style({
+					stroke: new ol.style.Stroke({
+						color: [216, 76, 41, 1],
+						width: 2
+					})
+				})
+			});
+			map.addLayer(rangeLyaer);
+
+			var format = new ol.format.WKT();
+
+			var wkrarr = ['MULTILINESTRING((103.545493294 29.4114103260001,103.545493194 29.4114101170001,103.545489918 29.4114115880001))',
+'LINESTRING(103.545343757 29.4111163800001,103.545343085 29.411111492,103.545334671 29.4110470140001,103.545329091 29.4110350820001)',
+'LINESTRING(103.545489918 29.4114115880001,103.545490462 29.4114142980001,103.545492392 29.411414048,103.545474848 29.4113741680001,103.545400237 29.411398267)',
+'LINESTRING(103.545220205 29.410800997,103.54528106 29.4107640840001)',
+'LINESTRING(103.545400237 29.411398267,103.54535247 29.4112677900001,103.545376301 29.411266228,103.545373868 29.4112489820001,103.545366143 29.411249565,103.545363705 29.411232635)',
+'LINESTRING(103.545363705 29.411232635,103.545343757 29.4111163800001)',
+'LINESTRING(103.54528106 29.4107640840001,103.545420436 29.4106802380001,103.545415468 29.4106702880001)',
+'LINESTRING(103.545253963 29.4108908470001,103.545239106 29.410863444)',
+'LINESTRING(103.545329091 29.4110350820001,103.545257665 29.410898537,103.545253963 29.4108908470001)',
+'LINESTRING(103.545239106 29.410863444,103.545213117 29.4108053040001,103.545220205 29.410800997)',];
+
+			for(var i = 0; i < wkrarr.length; i++) {
+				let feature = format.readFeature(wkrarr[i])
+				let wkt = format.writeFeature(feature, {
+					dataProjection: 'EPSG:3857',
+					featureProjection: 'EPSG:4326'
+				});
+				var wktfeature = format.readFeature(wkt);
+				rangeLyaer.getSource().addFeature(wktfeature);
+			}
+
+			setTimeout(() => {
+				let size = map.getSize();
+				if(rangeLyaer.getSource().getFeatures().length) {
+					let extent = rangeLyaer.getSource().getExtent();
+					map.getView().fit(extent, {
+						size: [size[0] * 1, size[1] * 1]
+					});
+				}
+			}, 300)
+		</script>
+	</body>
+
+</html>

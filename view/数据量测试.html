@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<title>ArcGIS demo</title>
+		<link rel="stylesheet" href="https://js.arcgis.com/4.9/esri/css/main.css">
+		<script src="https://js.arcgis.com/4.9/"></script>
+
+		<style>
+			html,
+			body,
+			#viewDiv {
+				padding: 0;
+				margin: 0;
+				height: 100%;
+				width: 100%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="viewDiv"></div>
+		<script>
+			require(["esri/Map",
+				"dojo/_base/xhr",
+				"esri/config",
+				"esri/views/MapView",
+				"esri/Graphic",
+				"dojo/domReady"
+			], function(Map,
+				xhr,
+				esriConfig,
+				MapView,
+				Graphic
+			) {
+				var map = new Map({
+					basemap: "streets" //ESRI提供的底 图
+				});
+
+				//二维视图
+				var view = new MapView({
+					map: map,
+					container: "viewDiv",
+					center: [118.55019107002441, 29.300640724771107],
+					zoom: 5
+				});
+				view.when(function() {
+					var markerSymbol = {
+						type: "simple-marker",
+						color: [226, 119, 5]
+					};
+
+					for(var i = 102; i < 106; i = i + 0.04) {
+						for(var j = 28; j < 32; j = j + 0.04) {
+							var point = {
+								type: "point",
+								longitude: i,
+								latitude: j
+							};
+							var graphic = new Graphic({
+								geometry: point,
+								symbol: markerSymbol
+							});
+							view.graphics.add(graphic);
+						}
+					}
+				}).catch(function(reason) {
+					console.log(reason)
+				});
+			})
+		</script>
+	</body>
+
+</html>

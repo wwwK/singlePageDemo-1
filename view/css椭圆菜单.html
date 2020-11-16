@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<style type="text/css">
+			body {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				width: 100%;
+				height: 100%;
+			}
+			
+			.loop-run {
+				top: 200px;
+				width: 600px;
+				height: 300px;
+				background: #005E82;
+				position: relative;
+				/*border-radius: 50%;*/
+			}
+			
+			.circle {
+				width: 60px;
+				height: 60px;
+				background: #F0506E;
+				/*border-radius: 50%;*/
+				position: absolute;
+			}
+			
+			/*.circle1 {
+				animation: 
+				animX 7s cubic-bezier(0.36, 0, 0.64, 1) -3.5s infinite alternate, 
+				animY 7s cubic-bezier(0.36, 0, 0.64, 1) 0s infinite alternate,
+				scale 14s cubic-bezier(0.36, 0, 0.64, 1) 0s infinite alternate;
+				animation-play-state: paused;
+			}*/
+			
+			.circle1 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -3.5s infinite alternate, 
+				animY 7s cubic-bezier(0.36, 0, 0.64, 1) -7s infinite alternate, 
+				scale 14s cubic-bezier(0.36, 0, 0.64, 1) -7s infinite alternate;
+				animation-play-state: paused;
+			}
+			
+			.circle2 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -5.5s infinite alternate, 
+				animY 7s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate, 
+				scale 14s cubic-bezier(0.36, 0, 0.64, 1) -9s infinite alternate;
+				animation-play-state: paused;
+			}
+			
+			.circle3 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -7.5s infinite alternate, 
+				animY 7s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate, 
+				scale 14s cubic-bezier(0.36, 0, 0.64, 1) -11s infinite alternate;
+				animation-play-state: paused;
+			}
+			
+			.circle4 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -9.5s infinite alternate, 
+				animY 7s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate, 
+				scale 14s cubic-bezier(0.36, 0, 0.64, 1) -13s infinite alternate;
+				animation-play-state: paused;
+			}
+			
+			.circle5 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -11.5s infinite alternate, 
+				animY 7s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate, 
+				scale 14s cubic-bezier(0.36, 0, 0.64, 1) -15s infinite alternate;
+				animation-play-state: paused;
+			}
+			
+			.circle6 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -13.5s infinite alternate, 
+				animY 7s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate, 
+				scale 14s cubic-bezier(0.36, 0, 0.64, 1) -17s infinite alternate;
+				animation-play-state: paused;
+			}
+			
+			.circle7 {
+				animation: animX 7s cubic-bezier(0.36, 0, 0.64, 1) -15.5s infinite alternate, 
+				animY 7s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate, 
+				scale 14s cubic-bezier(0.36, 0, 0.64, 1) -19s infinite alternate;
+				animation-play-state: paused;
+			}
+			
+			@keyframes animX {
+				0% {
+					left: -5%;
+				}
+				100% {
+					left: 95%;
+				}
+			}
+			
+			@keyframes animY {
+				0% {
+					top: -5%;
+				}
+				100% {
+					top: 90%;
+				}
+			}
+			
+			@keyframes scale {
+				0% {
+					transform: scale(0.5);
+				}
+				50% {
+					transform: scale(1);
+				}
+				100% {
+					transform: scale(0.5);
+				}
+			}
+		</style>
+		<script src="../js/jquery.min.js"></script>
+	</head>
+
+	<body>
+		<div class="loop-run">
+			<div class="circle circle1" index=0></div>
+			<div class="circle circle2" index=1></div>
+			<div class="circle circle3" index=2></div>
+			<div class="circle circle4" index=3></div>
+			<div class="circle circle5" index=4></div>
+			<div class="circle circle6" index=5></div>
+			<div class="circle circle7" index=6></div>
+		</div>
+	</body>
+	<script>
+		$(function() {
+			var timer = [0, 12000, 10000, 8000, 6000, 4000, 2000];
+			$('.circle').on('click', function() {
+				var index = parseInt($(this).attr('index'));
+				
+				setTimeout(() => {
+					$('.circle').css('animation-play-state', 'paused')
+				}, timer[index])
+				$('.circle').css('animation-play-state', 'running')
+				
+				timer[index] = 0;
+				for(var i = 0; i < index; i++) {
+					timer[i] = (index-i)*2000;
+				}
+				for(var i = index + 1; i < 7; i++) {
+					timer[i] = (7 - (i - index )) * 2000;
+				}
+			})
+
+		})
+	</script>
+
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="https://cdn.bootcss.com/odometer.js/0.4.8/themes/odometer-theme-car.css" />
+<style>
+.odometer {
+  font-size: 40px;
+}
+</style>
+<script>
+window.odometerOptions = {
+  format: '(ddd).dd'
+};
+</script>
+
+<script src="http://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/odometer.js/0.4.8/odometer.min.js"></script>
+<div class="odometer">99999999</div>
+
+<script>
+  setInterval(function(){
+      let data = Math.random() * 100000000
+    $('.odometer').html(data);
+  }, 3000);
+</script>

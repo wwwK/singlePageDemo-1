@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<include file="Public/header" />
+		<style>
+			body,
+			#mapContainer {
+				margin: 0;
+				height: 100%;
+				width: 100%;
+				font-size: 12px;
+			}
+		</style>
+		<link rel="stylesheet" href="http://cache.amap.com/lbs/static/main.css?v=1.0?v=1.0" />
+		<script src="http://cache.amap.com/lbs/static/es5.min.js"></script>
+		<script type="text/javascript" src="http://webapi.amap.com/maps?v=1.3&key=48c0cd81ecf5cd188310736abe2a8b3a&plugin=AMap.ToolBar"></script>
+		<script>
+			function init() {
+				map = new AMap.Map("mapContainer", {
+					zoom: 18,
+					center: ["104", "30"]
+				});
+				marker = new AMap.Marker({
+					map: map,
+					position: ["104", "30"]
+				})
+				marker.setLabel({
+					offset: new AMap.Pixel(20, 20), //修改label相对于maker的位置
+					content: "点击Marker打开高德地图"
+				});
+				marker.on('click', function(e) {
+					marker.markOnAMAP({
+						position: marker.getPosition()
+					})
+				})
+				map.addControl(new AMap.ToolBar());
+				if(AMap.UA.mobile) {
+					document.getElementById('button_group').style.display = 'none';
+				}
+			}
+		</script>
+	</head>
+
+	<body onload="init()">
+		<div id="mapContainer"></div>
+		<div class="button-group" id='button_group' style='top:15px;bottom:inherit'>
+		</div>
+	</body>
+
+</html>

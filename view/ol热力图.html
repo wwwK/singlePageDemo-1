@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../js/ol.js"></script>
+		<style>
+			html,
+			body,
+			.map {
+				margin: 0;
+				padding: 0;
+				height: 100%;
+				width: 100%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="map" id="map"></div>
+	</body>
+
+</html>
+<script>
+	var map = new ol.Map({
+		target: 'map',
+		view: new ol.View({
+			center: ol.proj.transform([104.06, 30.67], 'EPSG:4326', 'EPSG:3857'),
+			zoom: 7
+		})
+	});
+	var layer = new ol.layer.Tile({
+		extent: ol.proj.get('EPSG:3857').getExtent(),
+		source: new ol.source.TileArcGISRest({
+			url: 'http://map.geoq.cn/arcgis/rest/services/ChinaOnlineCommunityENG/MapServer'
+		})
+	});
+	map.addLayer(layer);
+
+	//创建热力图
+	var heatPoints = [];
+	var radius = 25;
+	var blur = 40;
+	var xmax = 11883906,
+		xmin = 11283906,
+		ymax = 3889966,
+		ymin = 3289966;
+	for(var i = 0; i < 5000; i++) {
+		heatPoints[i] = new ol.Feature(new ol.geom.Point([Math.floor(Math.random() * (xmax - xmin + 1) + xmin), Math.floor(Math.random() * (ymax - ymin + 1) + ymin)]));
+	}
+	var heatMap = new ol.layer.Heatmap({
+		source: new ol.source.Vector({
+			features: [],
+			wrapX: false
+		}),
+		blur: blur,
+		radius: radius
+	});
+
+	map.addLayer(heatMap);
+
+	heatMap.getSource().addFeatures(heatPoints);
+</script>

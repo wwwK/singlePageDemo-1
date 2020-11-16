@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<canvas id="canvaslayer" style="background-color: #dedede;"></canvas>
+	</body>
+	<script>
+		var canvas = document.getElementById('canvaslayer');
+		var context = canvas.getContext('2d');
+		canvas.width = 600;
+		canvas.height = 600;
+		context.globalAlpha = 0.4;
+		context.font = "64px bolder 黑体";
+		context.fillStyle = "#000000";
+		context.rotate(-Math.PI / 6);
+		context.fillText("13408684395", -240, 450);
+		context.fillText("2019-09-03 11:34:32", -280, 530);
+	</script>
+</html>

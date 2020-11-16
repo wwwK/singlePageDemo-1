@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../js/turf.min.js"></script>
+		<script src="../js/coordtransform.js"></script>
+	</head>
+
+	<body>
+	</body>
+	<script>
+		var polygon = turf.polygon([
+			[
+				[103.0549708, 30.02235269],
+				[103.0532035, 30.02147079],
+				[103.0531679, 30.02138469],
+				[103.0531394, 30.02129566],
+				[103.0531424, 30.02119924],
+				[103.0546494, 30.0187614],
+				[103.0547086, 30.01872574],
+				[103.0548158, 30.01868854],
+				[103.0548857, 30.01869147],
+				[103.0549747, 30.01872672],
+				[103.0575745, 30.02013051],
+				[103.0575896, 30.02016967],
+				[103.0575838, 30.02020728],
+				[103.0560425, 30.02268776],
+				[103.0560078, 30.0227127],
+				[103.0559236, 30.02274251],
+				[103.0558223, 30.02273178],
+				[103.0549708, 30.02235269]
+			]
+		], {
+			name: 'poly1'
+		});
+
+		var pt = turf.point([103.054222125116, 30.0221240458369]);
+
+		console.log(turf.booleanContains(polygon, pt))
+
+		var pt = turf.point([103.9336110, 30.7769440]);
+		var converted = turf.toMercator(pt);
+		console.log(converted)
+
+		let point = coordtransform.gcj02towgs84(104.1744, 31.128859);
+		console.log(point)
+	</script>
+
+</html>

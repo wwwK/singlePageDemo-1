@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta http-equiv="Expires" content="0">
+		<meta http-equiv="Pragma" content="no-cache">
+		<meta http-equiv="Cache-control" content="no-cache">
+		<meta http-equiv="Cache" content="no-cache">
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+		<title>爆管分析</title>
+		
+		<link rel="stylesheet" href="http://171.221.229.112:3005/arcgis_js_api/library/4.17/esri/themes/light/main.css" />
+		<script src="../js/ol.js"></script>
+		<script src="http://171.221.229.112:3005/arcgis_js_api/library/4.17/init.js"></script>
+		<script src="../js/jquery.min.js"></script>
+
+		<style>
+			html,
+			body,
+			#viewDiv {
+				padding: 0;
+				margin: 0;
+				height: 100%;
+				width: 100%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="viewDiv" class="esri-widget"></div>
+	</body>
+	<script>
+		//封装数据请求
+		function $$(url, data, callBack, failback) {
+			var requestAjax = $.ajax({
+				type: "get",
+				url: 'http://171.221.229.112:3006/' + url,
+				data: data,
+				dataType: 'json',
+				timeout: 60000,
+				success: function(result) {
+					if(result.Status == 200) {
+						callBack(result.Data);
+					} else {
+
+					}
+				},
+				error: function(XMLHttpRequest, textStatus, errorThrown) {
+
+				}
+			});
+		}
+
+		//获取当前url中参数
+		function getvl(name) {
+			var reg = new RegExp("(^|\\?|&)" + name + "=([^&]*)(\\s|&|$)", "i");
+			var url = encodeURI(parent.location.href); //location.href
+			if(reg.test(url)) {
+				var title = RegExp.$2; //RegExp.$2.replace(/\+/g, " ");
+				var uriToStr = decodeURI(decodeURI(title));
+				return uriToStr;
+			}
+			return "";
+		}
+
+		require(["esri/Map", "esri/views/SceneView", "esri/layers/WebTileLayer", "esri/layers/TileLayer", "esri/layers/FeatureLayer", "esri/layers/GraphicsLayer", "esri/Graphic",
+			"esri/WebScene", "esri/layers/SceneLayer", "esri/geometry/Polyline", "esri/geometry/Point",
+			"esri/core/urlUtils", "esri/config"
+		], function(
+			Map, SceneView, WebTileLayer, TileLayer, FeatureLayer, GraphicsLayer, Graphic,
+			WebScene, SceneLayer, Polyline, Point, urlUtils,
+			esriConfig
+		) {
+			//			esriConfig.portalUrl = "https://learngis2.maps.arcgis.com/arcgis";
+			//			esriConfig.request.corsEnabledServers.push('https://learngis2.maps.arcgis.com');
+			//			esriConfig.request.corsEnabledServers.push('https://learngis2.maps.arcgis.com:6443');
+
+			urlUtils.addProxyRule({
+				urlPrefix: "http://127.0.0.1:8020",
+				proxyUrl: "http://171.221.229.112:3005"
+			});
+
+			let roadLayer = new WebTileLayer({
+				urlTemplate: "http://{subDomain}.tianditu.com/DataServer?T=vec_w&x={col}&y={row}&l={level}&tk=3c46374310d9f01d106ca9934a4974f6",
+				subDomains: ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"]
+			})
+
+			//			let roadLayer = new TileLayer({
+			//		url: "http://map.geoq.cn/arcgis/rest/services/ChinaOnlineStreetPurplishBlue/MapServer",
+			//	});
+
+			let labelLayer = new WebTileLayer({
+				urlTemplate: "http://{subDomain}.tianditu.com/DataServer?T=cva_w&x={col}&y={row}&l={level}&tk=3c46374310d9f01d106ca9934a4974f6",
+				subDomains: ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"]
+			})
+
+			let map = new Map();
+			map.add(roadLayer);
+			map.add(labelLayer);
+
+			let kansasExtent = {
+				xmax: 1.1532602988330778E7,
+				xmin: 1.1525632612438602E7,
+				ymax: 3437933.318615426,
+				ymin: 3427288.40387543,
+				spatialReference: {
+					wkid: 3857
+				}
+			};
+
+			let view = new SceneView({
+				container: "viewDiv",
+				map: map,
+				//				scale: 500000,
+				//				zoom: 14,
+				//				center: [103.545252, 29.418827],
+				//				extent: kansasExtent,
+				camera: {
+					position: [103.545252, 29.418827 - 0.02, 1000],
+					tilt: 60, //俯仰角，0为垂直
+					heading: 0 //正北指向
+				}
+			});
+
+			let famenSceneLayer = new FeatureLayer({
+				url: "http://171.221.229.112:3005/server/rest/services/Hosted/pipelineScene_WSL6/FeatureServer/0",
+				popupEnabled: true,
+				elevationInfo: {
+					mode: "relative-to-ground",
+					offset: 0,
+					featureExpressionInfo: {
+						expression: "1"
+					},
+					unit: "meters"
+				},
+				popupTemplate: {
+					title: getTitle,
+					content: getInfo,
+					outFields: ['*']
+				},
+				minScale: 5000
+			});
+			map.add(famenSceneLayer);
+
+			let qiyuanSceneLayer = new FeatureLayer({
+				url: "http://171.221.229.112:3005/server/rest/services/Hosted/pipelineScene_WSL7/FeatureServer/0",
+				popupEnabled: true,
+				hasZ: false,
+				elevationInfo: {
+					mode: "relative-to-ground",
+					offset: 0,
+					featureExpressionInfo: {
+						expression: "1"
+					},
+					unit: "meters"
+				},
+				popupTemplate: {
+					title: getTitle,
+					content: getInfo,
+					outFields: ['*']
+				}
+			});
+			map.add(qiyuanSceneLayer);
+			let tiaoyaxiangSceneLayer = new FeatureLayer({
+				url: "http://171.221.229.112:3005/server/rest/services/Hosted/pipelineScene_WSL5/FeatureServer/0",
+				popupEnabled: true,
+				hasZ: false,
+				elevationInfo: {
+					mode: "relative-to-ground",
+					offset: 1,
+					featureExpressionInfo: {
+						expression: "0"
+					},
+					unit: "meters"
+				},
+				popupTemplate: {
+					title: getTitle,
+					content: getInfo,
+					outFields: ['*']
+				},
+				minScale: 5000
+			});
+			map.add(tiaoyaxiangSceneLayer);
+
+			let fangxiangSceneLayer = new SceneLayer({
+				url: "http://171.221.229.112:3005/server/rest/services/Hosted/pipelineScene_WSL3/SceneServer"
+			});
+			map.add(fangxiangSceneLayer);
+			let buildingSceneLayer = new SceneLayer({
+				url: "http://171.221.229.112:3005/server/rest/services/Hosted/pipelineScene_WSL4/SceneServer",
+				popupEnabled: true,
+				opacity: 0.8
+
+			});
+			map.add(buildingSceneLayer);
+			let guanduanSceneLayer = new SceneLayer({
+				url: "http://171.221.229.112:3005/server/rest/services/Hosted/pipelineScene_WSL1/SceneServer",
+				popupEnabled: true,
+				opacity: 0.8
+			});
+			map.add(guanduanSceneLayer);
+			let chuankuayueSceneLayer = new SceneLayer({
+				url: "http://171.221.229.112:3005/server/rest/services/Hosted/pipelineScene_WSL2/SceneServer",
+				popupEnabled: true
+			});
+			map.add(chuankuayueSceneLayer);
+
+			let pipelineLayer = new FeatureLayer({
+				source: [],
+				opacity: 0.6,
+				objectIdField: "id",
+				renderer: {
+					type: "simple",
+					symbol: {
+						type: "line-3d",
+						symbolLayers: [{
+							type: "path",
+							profile: "circle",
+							cap: 'round',
+							width: 1.2,
+							material: {
+								color: [0, 188, 255]
+							}
+						}]
+					}
+				},
+				fields: [{
+					name: "name",
+					type: "string",
+					alias: "管段名称"
+				}, {
+					name: "code",
+					type: "string",
+					alias: "管段编码"
+				}],
+				popupTemplate: {
+					title: '管段',
+					content: [{
+						type: "fields",
+						fieldInfos: [{
+							fieldName: "name",
+							label: "管段名称"
+						}, {
+							fieldName: "code",
+							label: "管段编码"
+						}]
+					}],
+					outFields: ['*']
+				},
+				spatialReference: {
+					wkid: 4326
+				},
+				elevationInfo: {
+					mode: "relative-to-ground",
+					offset: 0,
+					featureExpressionInfo: {
+						expression: "0.5"
+					},
+					unit: "meters"
+				},
+				geometryType: "polyline"
+			});
+			map.add(pipelineLayer);
+			let famenLayer = new FeatureLayer({
+				source: [],
+				opacity: 0.6,
+				objectIdField: "gid",
+				renderer: {
+					type: "simple",
+					symbol: {
+						type: "picture-marker",
+						url: "http://171.221.229.112:3005/arcgis_js_api/img/famen.png",
+						width: "36px",
+						height: "36px"
+					}
+				},
+				spatialReference: {
+					wkid: 4326
+				},
+				fields: [{
+					name: "famen_code",
+					type: "string",
+					alias: "阀门编码"
+				}],
+				popupTemplate: {
+					title: '阀门',
+					content: [{
+						type: "fields",
+						fieldInfos: [{
+							fieldName: "famen_code",
+							label: "阀门编码"
+						}]
+					}],
+					outFields: ['*']
+				},
+				elevationInfo: {
+					mode: "relative-to-ground",
+					offset: 0,
+					featureExpressionInfo: {
+						expression: "1.5"
+					},
+					unit: "meters"
+				},
+				geometryType: "point"
+			});
+			map.add(famenLayer);
+			let tiaoyaxiangLayer = new FeatureLayer({
+				source: [],
+				objectIdField: "gid",
+				renderer: {
+					type: "simple",
+					symbol: {
+						type: "picture-marker",
+						url: "http://171.221.229.112:3005/arcgis_js_api/img/tiaoyaxiang.png",
+						width: "36px",
+						height: "36px"
+					}
+				},
+				spatialReference: {
+					wkid: 4326
+				},
+				fields: [{
+					name: "tiaoyaxiang_code",
+					type: "string",
+					alias: "调压箱编码"
+				}],
+				popupTemplate: {
+					title: '调压箱',
+					content: [{
+						type: "fields",
+						fieldInfos: [{
+							fieldName: "tiaoyaxiang_code",
+							label: "调压箱编码"
+						}]
+					}],
+					outFields: ['*']
+				},
+				elevationInfo: {
+					mode: "relative-to-ground",
+					offset: 0,
+					featureExpressionInfo: {
+						expression: "1.5"
+					},
+					unit: "meters"
+				},
+				geometryType: "point"
+			});
+			map.add(tiaoyaxiangLayer);
+
+			let breakLayer = new FeatureLayer({
+				source: [],
+				objectIdField: "gid",
+				renderer: {
+					type: "simple",
+					symbol: {
+						type: "picture-marker",
+						url: "http://171.221.229.112:3005/arcgis_js_api/img/fire.png",
+						width: "64px",
+						height: "64px"
+					}
+				},
+				spatialReference: {
+					wkid: 4326
+				},
+				elevationInfo: {
+					mode: "relative-to-ground",
+					offset: 0,
+					featureExpressionInfo: {
+						expression: "1.5"
+					},
+					unit: "meters"
+				},
+				geometryType: "point"
+			});
+			map.add(breakLayer);
+
+			setTimeout(() => {
+				//?lon=103.54019&lat=29.405114
+				let lon = getvl('lon');
+				let lat = getvl('lat');
+				breakPipeLineAnalysis(lon, lat);
+			}, 3000)
+
+			function breakPipeLineAnalysis(lon, lat) {
+				if(!lon || !lat) return;
+				$$('pipebreakAnalysis', {
+					lon: lon,
+					lat: lat
+				}, function(result) {
+					addGraphicLayer(lon, lat);
+					if(!result.length){
+						alert('无分析结果！');
+						return;
+					}
+					
+					addResultLayer(result);
+				})
+			}
+
+			function addGraphicLayer(lon, lat) {
+				let graphic = new Graphic({
+					geometry: new Point([lon, lat]),
+					attributes: {
+						id: 1
+					},
+				});
+				breakLayer.source = [graphic];
+				breakLayer.refresh();
+			}
+
+			function addResultLayer(data) {
+				let pipelines = [];
+				let famens = [];
+				let tiaoyaxiangs = [];
+				let format = new ol.format.WKT();
+				for(let i = 0; i < data.length; i++) {
+					let feature = format.readFeature(data[i]['wkt']);
+					let coordinates = feature.getGeometry().getCoordinates();
+					let graphic = new Graphic({
+						geometry: new Polyline(coordinates),
+						attributes: data[i],
+					});
+					pipelines.push(graphic);
+					if(data[i]['famen_code']) {
+						let feature = format.readFeature(data[i]['famen_code']);
+						let coordinates = feature.getGeometry().getCoordinates();
+						let graphic = new Graphic({
+							geometry: new Point(coordinates),
+							attributes: data[i],
+						});
+						famens.push(graphic);
+					}
+					if(data[i]['tiaoyaxiang_wkt']) {
+						let feature = format.readFeature(data[i]['tiaoyaxiang_wkt']);
+						let coordinates = feature.getGeometry().getCoordinates();
+						let graphic = new Graphic({
+							geometry: new Point(coordinates),
+							attributes: data[i],
+						});
+						tiaoyaxiangs.push(graphic);
+					}
+				}
+				pipelineLayer.source = pipelines;
+				pipelineLayer.refresh();
+				famenLayer.source = famens;
+				famenLayer.refresh();
+				tiaoyaxiangLayer.source = tiaoyaxiangs;
+				tiaoyaxiangLayer.refresh();
+
+				view.goTo(pipelines);
+			}
+
+			function getInfo(response) {
+				let graphic = response.graphic;
+				let fields = graphic.layer.fields;
+				let attributes = handleNull(graphic.attributes);
+				let html = '<div class="esri-feature-fields"><table class="esri-widget__table" summary="属性和值列表"><tbody>';
+				for(let i = 0; i < fields.length; i++) {
+					html += '<tr><th class="esri-feature-fields__field-header">' + fields[i]['alias'] + '</th><td class="esri-feature-fields__field-data">' + attributes[fields[i]['name']] + '</td></tr>'
+				}
+				html += '</tbody></table></div>';
+				return html;
+			}
+
+			function getTitle(response) {
+				let graphic = response.graphic;
+				let displayField = graphic.layer.displayField;
+				let attributes = handleNull(graphic.attributes);
+				return attributes[displayField];
+			}
+
+			function handleNull(data) {
+				for(var i in data) {
+					if(data[i] == null) {
+						data[i] = '';
+					}
+				}
+				return data;
+			}
+
+		});
+	</script>
+
+</html>

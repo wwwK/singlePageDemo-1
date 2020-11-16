@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+
+	<body>
+		<canvas id="canvaslayer" width="2200" height="1100" style="background-color: #FFFFFF;"></canvas>
+		<script>
+			var canvas = document.getElementById("canvaslayer");
+			var context = canvas.getContext("2d");
+
+			for(var i = 0; i < 400; i++) {
+				for(var j = 0; j < 220; j++) {
+					context.fillStyle = "rgba(" + random(0, 255) + "," + random(0, 255) + "," + random(0, 255) + ",1)"; // 内部使用白色，如不指定，默认为黑色
+					context.fillRect(i * 4, j * 4, 4, 4);
+				}
+			}
+
+			var image = new Image();
+			image.src = canvas.toDataURL("image/png");
+			console.log(image.src)
+
+			function random(lower, upper) {
+				return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+			}
+		</script>
+	</body>
+
+</html>

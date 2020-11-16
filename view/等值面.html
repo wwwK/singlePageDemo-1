@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" type="text/css" href="../css/demo.css" />
+		<link href="../fonts/iconfont.css" rel="stylesheet" />
+
+		<link rel="stylesheet" href="http://localhost/arcgis_js_api/library/3.14/3.14/esri/css/esri.css">
+		<script src="../js/turf.min.js"></script>
+		<script src="http://localhost/arcgis_js_api/library/3.14/3.14/init.js"></script>
+
+		<style>
+			html,
+			body,
+			#map {
+				height: 100%;
+				width: 100%;
+				margin: 0;
+				padding: 0;
+				border: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map"></div>
+	</body>
+	<script>
+		require(["esri/map",
+			"esri/toolbars/draw",
+			"esri/toolbars/edit",
+			"esri/graphic",
+			"dojo/_base/event",
+			"esri/geometry/Polygon",
+			"esri/SpatialReference",
+			"esri/layers/GraphicsLayer",
+			"esri/symbols/SimpleLineSymbol",
+			"esri/symbols/SimpleFillSymbol",
+			"esri/Color",
+			"esri/geometry/webMercatorUtils",
+			"dojo/domReady!"
+		], function(Map, Draw, Edit, Graphic, event, Polygon, SpatialReference, GraphicsLayer, SimpleLineSymbol, SimpleFillSymbol, Color, webMercatorUtils) {
+			var map = new Map("map", {
+				center: [104, 30],
+				zoom: 8,
+				basemap: "topo"
+			});
+			var isobandLayer = new GraphicsLayer();
+			map.addLayer(isobandLayer);
+			var colors = new gradientColor('#EFFF00', '#04FF00', 10);
+			console.log(colors)
+			var isobans = getIsobands();
+			addIsobandGraphics(isobans);
+
+			function addIsobandGraphics(isobands) {
+				let features = isobands.features;
+				for(var i = 0; i < features.length; i++) {
+
+					var symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+						new SimpleLineSymbol(SimpleLineSymbol.STYLE_NULL,
+							new Color([255, 255, 255]), 1), new Color(colors[i])
+					);
+
+					if(features[i].geometry.type.toUpperCase() == 'MULTIPOLYGON') {
+						for(var j = 0; j < features[i].geometry.coordinates.length; j++) {
+							var polygon = new Polygon(features[i].geometry.coordinates[j]);
+							var geometry = webMercatorUtils.geographicToWebMercator(polygon);
+
+							var graphic = new Graphic(geometry, symbol);
+							isobandLayer.add(graphic)
+						}
+					} else {
+						var polygon = new Polygon(features[i].geometry.coordinates);
+						var geometry = webMercatorUtils.geographicToWebMercator(polygon);
+						var graphic = new Graphic(geometry, symbol);
+						isobandLayer.add(graphic)
+					}
+				}
+			}
+
+			function getIsobands() {
+				var extent = [100, 25, 110, 35];
+				var cellWidth = 100;
+				var pointGrid = turf.pointGrid(extent, cellWidth, {
+					units: 'miles'
+				});
+
+				for(var i = 0; i < pointGrid.features.length; i++) {
+					pointGrid.features[i].properties.temperature = Math.random() * 10;
+				}
+				var breaks = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+				var polygons = turf.isobands(pointGrid, breaks, {
+					zProperty: 'temperature'
+				});
+				return polygons;
+			}
+		});
+
+		/*
+// startColor：开始颜色hex
+// endColor：结束颜色hex
+// step:几个阶级（几步）
+*/
+		function gradientColor(startColor, endColor, step) {
+			startRGB = this.colorRgb(startColor); //转换为rgb数组模式
+			startR = startRGB[0];
+			startG = startRGB[1];
+			startB = startRGB[2];
+			endRGB = this.colorRgb(endColor);
+			endR = endRGB[0];
+			endG = endRGB[1];
+			endB = endRGB[2];
+			sR = (endR - startR) / step; //总差值
+			sG = (endG - startG) / step;
+			sB = (endB - startB) / step;
+			var colorArr = [];
+			for(var i = 0; i < step; i++) {
+				//计算每一步的hex值
+				var hex = [parseInt((sR * i + startR)), parseInt((sG * i + startG)), parseInt((sB * i + startB)), 0.5];
+				colorArr.push(hex);
+			}
+			return colorArr;
+		}
+		// 将hex表示方式转换为rgb表示方式(这里返回rgb数组模式)
+		gradientColor.prototype.colorRgb = function(sColor) {
+			var reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
+			var sColor = sColor.toLowerCase();
+			if(sColor && reg.test(sColor)) {
+				if(sColor.length === 4) {
+					var sColorNew = "#";
+					for(var i = 1; i < 4; i += 1) {
+						sColorNew += sColor.slice(i, i + 1).concat(sColor.slice(i, i + 1));
+					}
+					sColor = sColorNew;
+				}
+				//处理六位的颜色值
+				var sColorChange = [];
+				for(var i = 1; i < 7; i += 2) {
+					sColorChange.push(parseInt("0x" + sColor.slice(i, i + 2)));
+				}
+				return sColorChange;
+			} else {
+				return sColor;
+			}
+		};
+		// 将rgb表示方式转换为hex表示方式
+		gradientColor.prototype.colorHex = function(rgb) {
+			var _this = rgb;
+			var reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
+			if(/^(rgb|RGB)/.test(_this)) {
+				var aColor = _this.replace(/(?:(|)|rgb|RGB)*/g, "").split(",");
+				var strHex = "#";
+				for(var i = 0; i < aColor.length; i++) {
+					var hex = Number(aColor[i]).toString(16);
+					hex = hex < 10 ? 0 + '' + hex : hex; // 保证每个rgb的值为2位
+					if(hex === "0") {
+						hex += hex;
+					}
+					strHex += hex;
+				}
+				if(strHex.length !== 7) {
+					strHex = _this;
+				}
+				return strHex;
+			} else if(reg.test(_this)) {
+				var aNum = _this.replace(/#/, "").split("");
+				if(aNum.length === 6) {
+					return _this;
+				} else if(aNum.length === 3) {
+					var numHex = "#";
+					for(var i = 0; i < aNum.length; i += 1) {
+						numHex += (aNum[i] + aNum[i]);
+					}
+					return numHex;
+				}
+			} else {
+				return _this;
+			}
+		}
+	</script>
+
+</html>

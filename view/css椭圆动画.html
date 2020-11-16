@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style>
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+				padding: 0;
+				margin: 0;
+			}
+			#app{
+				background: green;
+				margin-top: 200px;
+				margin-left: 100px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="app"></div>
+	</body>
+	<script>
+		class EllopseMenu {
+			menuitem = []
+			clockwise = []
+			_clockwise = []
+			anticlockwise = []
+			_anticlockwise = []
+			isinanimation = false //是否处于动画中
+			options = {}
+			constructor(options) {
+				if(!options['id']) { //容器id
+					console.log('id is required!');
+					return;
+				}
+				options.width = options.width || 800; //菜单容器宽度
+				options.height = options.height || 300; //菜单容器高度
+				options.itemwidth = options.itemwidth || 64; //菜单项宽度
+				options.itemheight = options.itemheight || 96; //菜单项高度
+				options.itemcolor = options.itemcolor; //菜单项背景颜色
+				options.itemscale = options.itemscale || 0.5; //最小缩放比例
+				options.menunum = options.menunum || 3; //菜单项个数
+				options.speed = options.speed || 0.5; //每个间隔间运行时间,单位为s
+
+				options.childwidth = options.childwidth || 64; //菜单项点击区域宽度
+				options.childheight = options.childheight || 96; //菜单项点击区域高度
+				options.childcolor = options.childcolor; //菜单项背景颜色
+				options.childoffsetx = options.childoffsetx || 0; //菜单项点击区域横向偏移
+				options.childoffsety = options.childoffsety || 0; //菜单项点击区域纵向偏移
+				options.callback = options.callback || function(index) { //选中菜单回掉函数
+					console.log(index)
+				};
+
+				this.options = options;
+				this.menuitem = this._createItem(options.menunum, options.speed);
+				this.clockwise = this._clockwiseCss(options.menunum, options.speed);
+				this.anticlockwise = this._anticlockwiseCss(options.menunum, options.speed);
+				this._clockwise = this._clockwiseCss(options.menunum, options.speed, '_');
+				this._anticlockwise = this._anticlockwiseCss(options.menunum, options.speed, '_');
+				this._createStyle(options);
+				this._createHtml();
+			}
+			/*
+			 * 生成菜单项，并记录位置和各自运行时间
+			 * menunum 菜单数量
+			 * speed 旋转速度
+			 **/
+			_createItem(menunum, speed) {
+				let times = this._calcTime(menunum, speed);
+				for(let i = 0; i < menunum; i++) {
+					this.menuitem.push({
+						id: 'menu-item-' + i,
+						position: i,
+						time: times[i]
+					})
+				}
+				return this.menuitem;
+			}
+			/*
+			 * 计算各个节点的运行时间
+			 * menunum 菜单数量
+			 * speed 旋转速度
+			 * */
+			_calcTime(menunum, speed) {
+				let times = [0];
+				for(let i = 1; i <= Math.floor(menunum / 2); i++) {
+					times[i] = i * speed * 1000;
+					times[menunum - i] = i * speed * 1000;
+				}
+				return times;
+			}
+			/*
+			 * 计算不同状态下个节点位置
+			 * menunum 菜单数量
+			 * index 原始位置节点索引
+			 * */
+			_calcPosition(menunum, index) {
+				let indexs = [];
+				for(let i = 0; i < menunum; i++) {
+					if((index + i) < menunum) {
+						indexs.push(index + i)
+					} else {
+						indexs.push(index + i - menunum)
+					}
+				}
+				return indexs;
+			}
+			/*
+			 * 生成样式规则
+			 */
+			_createStyle(options) {
+				document.getElementById(options.id).style.width = options.width + 'px';
+				document.getElementById(options.id).style.height = options.height + 'px';
+				document.getElementById(options.id).style.position = 'relative';
+
+				let left = (options.itemwidth / 2) / options.width * 100;
+				let right = 100 - ((options.itemwidth / 2) / options.width * 100);
+				let top = - (options.itemheight / 2) / options.height * 100;
+				let bottom = 100 - options.itemheight / options.height * 100;
+				let style = document.styleSheets[0];
+				style.insertRule('.menu-item {width: ' + options.itemwidth + 'px;height: ' + options.itemheight + 'px;position: absolute;background: ' + options.itemcolor + ';}');
+				style.insertRule('.menu-item-child {width: ' + options.childwidth + 'px;height: ' + options.childheight + 'px;margin-left: ' + options.childoffsetx + 'px;position: absolute;margin-top: ' + options.childoffsety + 'px;cursor: pointer;background: ' + options.childcolor + '}');
+				style.insertRule('@keyframes animX {0% {left: -' + left + '%;}100% {left: ' + right + '%;}}');
+				style.insertRule('@keyframes animY {0% {top: ' + top + '%;}100% {top: ' + bottom + '%;}}');
+
+				let _top = (-(options.itemheight / 2) + options.itemheight * 0.5 * (1 - options.itemscale) - options.childheight * 0.5 * (1 - options.itemscale)) / options.height * 100;
+				
+				style.insertRule('@keyframes _animX {0% {left: -' + left + '%;}100% {left: ' + right + '%;}}');
+				style.insertRule('@keyframes _animY {0% {top: ' + _top + '%;}100% {top: ' + bottom + '%;}}');
+				style.insertRule('@keyframes scale {0% {transform: scale(' + options.itemscale + ');}50% {transform: scale(1);}100% {transform: scale(' + options.itemscale + ');}}');
+			}
+			/*
+			 * 生成html文档
+			 */
+			_createHtml() {
+				let html = "";
+				document.getElementById(this.options.id).innerHTML = "";
+				for(let i = 0; i < this.menuitem.length; i++) {
+					html += '<div id="menu-item-' + i + '" class="menu-item" index=' + i + "></div>";
+				}
+				for(let i = 0; i < this.menuitem.length; i++) {
+					html += '<div id="menu-item-child-' + i + '" class="menu-item-child" index=' + i + "></div>";
+				}
+				document.getElementById(this.options.id).innerHTML = html;
+				for(let i = 0; i < this.menuitem.length; i++) {
+					document.getElementById(
+						this.menuitem[i]["id"]
+					).style.animation = this.clockwise[i];
+					document.getElementById(
+						this.menuitem[i]["id"].replace("menu-item", "menu-item-child")
+					).style.animation = this._clockwise[i];
+				}
+
+				let menuitems = document.getElementsByClassName("menu-item-child"); 
+				document.getElementById(this.menuitem[0]["id"]).className  =  "menu-item active";
+				for(let i = 0; i < menuitems.length; i++) {
+					menuitems[i].addEventListener("click", (_this) => {
+						if(this.isinanimation) return;
+						let index = parseInt(_this.target.getAttribute("index"));
+
+						let _items = document.getElementsByClassName("menu-item");
+						for(let i = 0; i < _items.length; i++) {
+							_items[i].className = "menu-item";
+						}
+						document.getElementById(
+							_this.target.id.replace("menu-item-child", "menu-item")
+						).className = "menu-item active";
+
+						this._selectMenu(index);
+
+					});
+				}
+			}
+			_selectMenu(index) {
+				let currentNode = null;
+				for(let i = 0; i < this.menuitem.length; i++) {
+					if(this.menuitem[i]["id"] == "menu-item-" + index) {
+						currentNode = this.menuitem[i];
+					}
+				}
+				if(currentNode["position"] <= this.menuitem.length / 2) {
+					for(let i = 0; i < this.menuitem.length; i++) {
+						document.getElementById(
+							this.menuitem[i]["id"]
+						).style.animation = this.clockwise[i];
+					}
+				} else {
+					for(let i = 0; i < this.menuitem.length; i++) {
+						document.getElementById(
+							this.menuitem[i]["id"]
+						).style.animation = this.anticlockwise[i];
+					}
+				}
+				let items = document.getElementsByClassName("menu-item");
+				for(let i = 0; i < items.length; i++) {
+					items[i].style.animationPlayState = "running";
+				}
+				this.isinanimation = true;
+				setTimeout(() => {
+					this.isinanimation = false;
+					this._createHtml();
+					this.options.callback(index);
+				}, currentNode["time"]);
+
+				let indexs = this._calcPosition(this.options.menunum, index);
+				let times = this._calcTime(this.options.menunum, this.options.speed);
+
+				let tempItem = [];
+				for(let i = 0; i < indexs.length; i++) {
+					tempItem.push({
+						id: "menu-item-" + indexs[i],
+						position: i,
+						time: times[i],
+					});
+				}
+				this.menuitem = tempItem;
+			}
+			/* 
+			 * 生成顺时针css列表，用于控制旋转路径、方向和速度
+			 * menunum 菜单数量
+			 * speed 旋转速度
+			 * identify 标识（点击区域和菜单项不共用class）
+			 */
+			_clockwiseCss(menunum, speed, identify) {
+				//旋转一周总共花费时间
+				let totaltime = menunum * speed / 2;
+				//第一个菜单所在位置
+				let xstarttime = -(totaltime * 4 - totaltime / 2);
+				let ystarttime = -totaltime * 3;
+				let zstarttime = -totaltime * 3;
+				let csslist = [];
+				identify = identify || '';
+				for(let i = 0; i < menunum; i++) {
+					let _css = `${identify}animX ${totaltime}s cubic-bezier(0.36, 0, 0.64, 1) ${xstarttime+i*speed}s infinite alternate none paused, ${identify}animY ${totaltime}s cubic-bezier(0.36, 0, 0.64, 1) ${ystarttime+i*speed}s infinite alternate none paused, scale ${totaltime*2}s cubic-bezier(0.36, 0, 0.64, 1) ${zstarttime+i*speed}s infinite alternate none paused`;
+					csslist.push(_css);
+				}
+				return csslist;
+			}
+			/* 
+			 * 生成逆时针css列表，用于控制旋转路径、方向和速度
+			 * menunum 菜单数量
+			 * speed 旋转速度
+			 * identify 标识（点击区域和菜单项不共用class）
+			 */
+			_anticlockwiseCss(menunum, speed, identify) {
+				//旋转一周总共花费时间
+				let totaltime = menunum * speed / 2;
+				//第一个菜单所在位置
+				let xstarttime = -totaltime / 2;
+				let ystarttime = -totaltime;
+				let zstarttime = -totaltime;
+				let csslist = [];
+				identify = identify || '';
+				for(let i = 0; i < menunum; i++) {
+					let _css = `${identify}animX ${totaltime}s cubic-bezier(0.36, 0, 0.64, 1) ${xstarttime-i*speed}s infinite alternate none paused, ${identify}animY ${totaltime}s cubic-bezier(0.36, 0, 0.64, 1) ${ystarttime-i*speed}s infinite alternate none paused, scale ${totaltime*2}s cubic-bezier(0.36, 0, 0.64, 1) ${zstarttime-i*speed}s infinite alternate none paused`;
+					csslist.push(_css);
+				}
+				return csslist;
+			}
+			paly() {
+				let items = document.getElementsByClassName("menu-item");
+				for(let i = 0; i < items.length; i++) {
+					items[i].style.animationPlayState = "running";
+				}
+			}
+			stop() {
+				let items = document.getElementsByClassName("menu-item");
+				for(let i = 0; i < items.length; i++) {
+					items[i].style.animationPlayState = "paused";
+				}
+			}
+		}
+
+		let ellopseMenu = new EllopseMenu({
+			id: 'app',
+			menunum: 4,
+			speed: 0.5,
+			width: 600,
+			height: 160,
+			itemwidth: 165,
+			itemheight: 147,
+			childwidth: 72,
+			childheight: 82,
+			childoffsetx: 46,
+
+			itemcolor: 'orange',
+
+			childcolor: 'blue',
+		});
+	</script>
+
+</html>

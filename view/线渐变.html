@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="https://openlayers.org/en/latest/build/ol.js"></script>
+		<script src="../js/ol-ext.js"></script>
+		<style>
+			html,
+			body,
+			#map {
+				height: 100%;
+				width: 100%;
+				margin: 0;
+				padding: 0;
+				border: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map"></div>
+	</body>
+	<script>
+		var layer = new ol.layer.Tile({
+			source: new ol.source.OSM()
+		});
+
+		var map = new ol.Map({
+			target: 'map',
+			view: new ol.View({
+				zoom: 5,
+				center: [63595, 5958419]
+			}),
+			layers: [layer]
+		});
+
+		var flowStyle = new ol.style.FlowLine({
+			color: 'rgba(244,254,0,0)',
+			color2: 'rgba(0,255,0,1)',
+			width: 5,
+			width2: 10
+		});
+
+		var vector = new ol.layer.Vector({
+			renderMode: 'image',
+			source: new ol.source.Vector({
+				features: [new ol.Feature(new ol.geom.LineString([
+					[259274, 6398696],
+					[63595, 5958419],
+					[635956, 5772524]
+				]))]
+			}),
+			style: flowStyle
+		})
+		map.addLayer(vector);
+	</script>
+
+</html>
