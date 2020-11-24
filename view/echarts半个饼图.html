@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta http-equiv="Expires" content="0">
+		<meta http-equiv="Pragma" content="no-cache">
+		<meta http-equiv="Cache-control" content="no-cache">
+		<meta http-equiv="Cache" content="no-cache">
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+		<title></title>
+		<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+		<style>
+			html,
+			body,
+			.echart {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="echart" id="chartA"></div>
+	</body>
+	<script>
+		var myChart = echarts.init(document.getElementById('chartA'));
+		var option = {
+			legend: {
+				left: 'center',
+				icon: 'circle',
+				top: '0',
+				data: ['干扰', '质差', '高负荷', '弱覆盖', '告警类超长超频统计']
+			},
+			series: [{
+				name: '面积模式',
+				type: 'pie',
+				radius: [60, 160],
+				center: ['50%', '50%'],
+				roseType: 'area',
+				label: {
+					formatter: '{c}'
+				},
+
+				startAngle: 0,
+				data: [{
+						value: 456,
+						name: '干扰',
+						itemStyle: {
+							color: '#4192F7'
+						}
+					},
+					{
+						value: 870,
+						name: '质差',
+						itemStyle: {
+							color: '#F68B71'
+						}
+					},
+					{
+						value: 678,
+						name: '高负荷',
+						itemStyle: {
+							color: '#FAB455'
+						}
+					},
+					{
+						value: 789,
+						name: '弱覆盖',
+						itemStyle: {
+							color: '#31D3D7'
+						}
+					},
+					{
+						value: 1234,
+						name: '告警类超长超频统计',
+						itemStyle: {
+							color: '#5045F6'
+						}
+					},
+					{
+						value: 0,
+						name: '',
+						labelLine: {
+							show: false
+						},
+						label: {
+							show: false
+						}
+					},
+					{
+						value: 0,
+						name: '',
+						labelLine: {
+							show: false
+						},
+						label: {
+							show: false
+						}
+					},
+					{
+						value: 0,
+						name: '',
+						labelLine: {
+							show: false
+						},
+						label: {
+							show: false
+						}
+					},
+					{
+						value: 0,
+						name: '',
+						labelLine: {
+							show: false
+						},
+						label: {
+							show: false
+						}
+					},
+					{
+						value: 0,
+						name: '',
+						labelLine: {
+							show: false
+						},
+						label: {
+							show: false
+						}
+					},
+				]
+			}]
+		};
+
+		myChart.setOption(option);
+	</script>
+
+</html>
