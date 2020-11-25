@@ -99,6 +99,7 @@
 			dataProjection: 'EPSG:3857',
 			featureProjection: 'EPSG:4326'
 		}));
+		rangeLyaer.getSource().addFeature(feature_5);
 
 		splitPolygon(feature_1.getGeometry(), feature_5.getGeometry());
 
@@ -115,18 +116,16 @@
 			}
 			let polygoncoordinates = polygonGeom.getCoordinates();
 			let linestringcoordinates = linestringGeom.getCoordinates();
-			
-			let intersectpoints=[];
+			let intersectpoints = [];
 			if(polygonType == 'POLYGON') {
 				for(let i = 0; i < polygoncoordinates.length; i++) {
-					
 					for(let j = 0; j < polygoncoordinates[i].length - 1; j++) {
 						for(let k = 0; k < linestringcoordinates.length - 1; k++) {
-							let result=judgeIntersect(polygoncoordinates[i][j],polygoncoordinates[i][j + 1],linestringcoordinates[k],linestringcoordinates[k + 1]);
-							if(result){
+							let result = judgeIntersect(polygoncoordinates[i][j], polygoncoordinates[i][j + 1], linestringcoordinates[k], linestringcoordinates[k + 1]);
+							if(result) {
 								intersectpoints.push({
-									index:[i,j],
-									point:result
+									index: [i, j],
+									point: result
 								})
 							}
 						}
@@ -153,36 +152,35 @@
 				x: b2[0],
 				y: b2[1]
 			}
-			/** 1 解线性方程组, 求线段交点. **/
-			// 如果分母为0 则平行或共线, 不相交  
-			var denominator = (b.y - a.y) * (d.x - c.x) - (a.x - b.x) * (c.y - d.y);
-			if(denominator == 0) {
+
+			// 三角形abc 面积的2倍
+			var area_abc = (a.x - c.x) * (b.y - c.y) - (a.y - c.y) * (b.x - c.x);
+
+			// 三角形abd 面积的2倍
+			var area_abd = (a.x - d.x) * (b.y - d.y) - (a.y - d.y) * (b.x - d.x);
+
+			// 面积符号相同则两点在线段同侧,不相交 (对点在线段上的情况,本例当作不相交处理);
+			if(area_abc * area_abd >= 0) {
 				return false;
 			}
-			// 线段所在直线的交点坐标 (x , y)      
-			var x = ((b.x - a.x) * (d.x - c.x) * (c.y - a.y) +
-				(b.y - a.y) * (d.x - c.x) * a.x -
-				(d.y - c.y) * (b.x - a.x) * c.x) / denominator;
-			var y = -((b.y - a.y) * (d.y - c.y) * (c.x - a.x) +
-				(b.x - a.x) * (d.y - c.y) * a.y -
-				(d.x - c.x) * (b.y - a.y) * c.y) / denominator;
 
-			/** 2 判断交点是否在两条线段上 **/
-			if(
-				// 交点在线段1上  
-				(x - a.x) * (x - b.x) <= 0 && (y - a.y) * (y - b.y) <= 0
-				// 且交点也在线段2上  
-				&&
-				(x - c.x) * (x - d.x) <= 0 && (y - c.y) * (y - d.y) <= 0
-			) {
-				// 返回交点p  
-				return {
-					x: x,
-					y: y
-				}
+			// 三角形cda 面积的2倍
+			var area_cda = (c.x - a.x) * (d.y - a.y) - (c.y - a.y) * (d.x - a.x);
+			// 三角形cdb 面积的2倍
+			// 注意: 这里有一个小优化.不需要再用公式计算面积,而是通过已知的三个面积加减得出.
+			var area_cdb = area_cda + area_abc - area_abd;
+			if(area_cda * area_cdb >= 0) {
+				return false;
 			}
-			//否则不相交  
-			return false
+
+			//计算交点坐标
+			var t = area_cda / (area_abd - area_abc);
+			var dx = t * (b.x - a.x),
+				dy = t * (b.y - a.y);
+			return {
+				x: a.x + dx,
+				y: a.y + dy
+			};
 		}
 
 		//数组深度
