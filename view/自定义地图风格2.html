@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../js/ol.js"></script>
+		<script src="../js/jquery.min.js"></script>
+		<style>
+			html,
+			body,
+			.map {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="map" id="map">
+			
+		</div>
+		<svg style="position: absolute;top: 0;left: 0;z-index: -99;">
+			<filter id="filter-sample">
+				<feColorMatrix type="matrix" values="0 0 0 0 0
+					 0 0 0 0 0.012 
+					 0 0 0 0 0.04 
+					 0.2126 0.7152 0.0722 -0.025 -0.05 " />
+			</filter>
+		</svg>
+		<script>
+			let map = new ol.Map({
+				target: 'map',
+				interactions: ol.interaction.defaults({
+					altShiftDragRotate: false,
+					pinchRotate: false
+				}),
+				view: new ol.View({
+					center: ol.proj.transform([104, 30], 'EPSG:4326', 'EPSG:3857'),
+					zoom: 8,
+					maxZoom: 18,
+					minZoom: 2
+				})
+			});
+
+			let roadLayer = new ol.layer.Tile({
+				title: "3857底图",
+				source: new ol.source.XYZ({
+					tileUrlFunction: function(tileCoord) {
+						let oo = "00000000";
+						let zz = tileCoord[0];
+						if(zz < 10) {
+							zz = '0' + zz;
+						}
+						let z = "L" + zz;
+
+						let xx = tileCoord[1].toString(16);
+						let x = "C" + oo.substring(0, 8 - xx.length) + xx;
+						let yy = (-tileCoord[2] - 1).toString(16); //注意此处，计算方式变了
+						let y = "R" + oo.substring(0, 8 - yy.length) + yy;
+						return 'http://223.86.3.47:28080/api/Handler/Utils.ashx?method=convertImg&x=' + z + '&y=' + y + '&z=' + x
+					},
+					projection: 'EPSG:3857'
+				})
+			});
+			map.addLayer(roadLayer);
+
+			roadLayer.on('postcompose', function(event) {
+				event.context.filter = "url(#filter-sample)";
+			})
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="../geodata/province.js"></script>
+	</head>
+
+	<body>
+	</body>
+	<script>
+		for(var i = 0; i < provinceData.features.length; i++) {
+			var geometry=provinceData.features[i].geometry;
+			var geoType=geometry.type.toUpperCase();
+			var coordinates=geometry.coordinates;
+			
+			if (geoType == 'POLYGON') {
+				for (let j = 0; j < coordinates.length; j++) {
+					for (let k = 0; k < coordinates[j].length; k++) {
+						coordinates[j][k][0] = parseFloat(coordinates[j][k][0].toFixed(6));
+						coordinates[j][k][1] = parseFloat(coordinates[j][k][1].toFixed(6));
+					}
+				}
+			} else if (geoType == 'MULTIPOLYGON') {
+				for (let j = 0; j < coordinates.length; j++) {
+					for (let k = 0; k < coordinates[j].length; k++) {
+						for (let l = 0; l < coordinates[j][k].length; l++) {
+							coordinates[j][k][l][0] = parseFloat(coordinates[j][k][l][0].toFixed(6));
+							coordinates[j][k][l][1] = parseFloat(coordinates[j][k][l][1].toFixed(6));
+						}
+					}
+				}
+			}
+			provinceData.features[i].geometry.coordinates=coordinates;
+		}
+		console.log(JSON.stringify(provinceData))
+	</script>
+
+</html>

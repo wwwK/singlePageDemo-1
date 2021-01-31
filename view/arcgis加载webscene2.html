@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/themes/light/main.css" />
+		<script src="https://js.arcgis.com/4.17/"></script>
+		<style>
+			html,
+			body,
+			#viewDiv {
+				padding: 0;
+				margin: 0;
+				height: 100%;
+				width: 100%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="viewDiv" class="esri-widget"></div>
+	</body>
+	<script>
+		require(["esri/Map", "esri/views/SceneView", "esri/layers/WebTileLayer", "esri/layers/TileLayer", "esri/layers/FeatureLayer", "esri/WebScene", "esri/layers/SceneLayer", "esri/config"], function(
+			Map, SceneView, WebTileLayer, TileLayer, FeatureLayer,
+			WebScene, SceneLayer,
+			esriConfig
+		) {
+			//			esriConfig.portalUrl = "https://learngis2.maps.arcgis.com/arcgis";
+			//			esriConfig.request.corsEnabledServers.push('https://learngis2.maps.arcgis.com');
+			//			esriConfig.request.corsEnabledServers.push('https://learngis2.maps.arcgis.com:6443');
+
+			let roadLayer = new WebTileLayer({
+				urlTemplate: "http://{subDomain}.tianditu.com/DataServer?T=vec_w&x={col}&y={row}&l={level}&tk=3c46374310d9f01d106ca9934a4974f6",
+				subDomains: ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"]
+			})
+			let labelLayer = new WebTileLayer({
+				urlTemplate: "http://{subDomain}.tianditu.com/DataServer?T=cva_w&x={col}&y={row}&l={level}&tk=3c46374310d9f01d106ca9934a4974f6",
+				subDomains: ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"]
+			})
+
+			let map = new Map();
+			map.add(roadLayer);
+			map.add(labelLayer);
+
+			let view = new SceneView({
+				container: "viewDiv",
+				map: map,
+				scale: 50000000,
+				center: [104, 30]
+			});
+
+			let guanduanSceneLayer = new SceneLayer({
+				url: "http://171.221.229.112:3005/server/rest/services/Hosted/pipelineScene_WSL1/SceneServer",
+				popupEnabled: true
+			});
+			map.add(guanduanSceneLayer);
+		});
+	</script>
+
+</html>

@@ -26,17 +26,17 @@
 	</head>
 
 	<body>
-		<iframe id="iframe" class="app" src="http://223.86.3.47:38080/outOfServiceAlarm/index.html?v=20180909"></iframe>
-
+		<iframe id="iframe" class="app" src="http://223.86.3.47:38080/handleComplaint_1/index.html?lon=104&lat=30"></iframe>
 	</body>
 	<script>
-		setTimeout(() => {
-			document.getElementById('iframe').contentWindow.postMessage({
-				city: '巴中',
-				county: '',
-				branch:''
-			}, '*');
-		}, 500)
+		window.addEventListener('message', function(event) {　　 // 监听子页面初始化完成反馈消息
+			if(event.data.isload) {　　　　 //开始执行
+				document.getElementById('iframe').contentWindow.postMessage({
+					lon: 104,
+					lat: 30,
+				}, '*');
+			}
+		})
 	</script>
 
 </html>
